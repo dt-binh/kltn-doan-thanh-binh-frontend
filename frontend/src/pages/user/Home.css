@@ -1,0 +1,87 @@
+.banner {
+  background: linear-gradient(to bottom,#170bd3 0%, #7ff5da 100%);
+  color: white;
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.banner .banner-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.banner .banner-content h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  margin-bottom: 1rem;
+  font-weight: 700;
+  
+}
+
+.banner .banner-content p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+}
+
+.categories,
+.featured {
+  padding: 4rem 0;
+}
+
+.categories .container,
+.featured .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.categories h2,
+.featured h2 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.genre-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.genre-card {
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #333;
+  text-align: center;
+  font-weight: 500;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  border: 1px solid #e5e7eb;
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.genre-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(79,70,229,0.15);
+  color: #4f46e5;
+}
+
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .banner {
+    padding: 3rem 0;
+  }
+
+  .books-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+}
