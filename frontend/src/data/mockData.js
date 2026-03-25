@@ -73,3 +73,16 @@ export const books = [
     description: 'Dystopian classic về chế độ toàn trị...'
   }
 ];
+export const orders = [
+  { id: 1, customer: 'Nguyễn Văn A', total: 300000, status: 'Đã giao', date: '2024-10-01' },
+  { id: 2, customer: 'Trần Thị B', total: 150000, status: 'Đang xử lý', date: '2024-10-02' },
+  { id: 3, customer: 'Lê Văn C', total: 500000, status: 'Đã hủy', date: '2024-10-03' },
+  { id: 4, customer: 'Phạm Thị D', total: 220000, status: 'Đã giao', date: '2024-10-04' },
+  { id: 5, customer: 'Hoàng Văn E', total: 80000, status: 'Đang giao', date: '2024-10-05' }
+];
+export const users = [
+  { id: 1, name: 'Nguyễn Văn A', email: 'a@example.com', role: 'user', status: 'active' },
+  { id: 2, name: 'Admin User', email: 'admin@storyshop.com', role: 'admin', status: 'active' },
+  { id: 3, name: 'Trần Thị B', email: 'b@example.com', role: 'user', status: 'active' },
+  { id: 4, name: 'Lê Văn C', email: 'c@example.com', role: 'user', status: 'inactive' }
+];

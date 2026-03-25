@@ -1,0 +1,163 @@
+.profile-page {
+  padding: 2rem 0;
+}
+
+.profile-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.profile-header h1 {
+  font-size: 2.3rem;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 2.5rem;
+}
+
+@media (max-width: 768px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* PROFILE INFO */
+.profile-info {
+  background: #FFFFFF;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.profile-info h2 {
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.9rem;
+  border: 2px solid #E5E7EB;
+  border-radius: 10px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.form-group input:focus {
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+}
+
+/* BUTTONS */
+.profile-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.profile-buttons button {
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.profile-buttons button[type="submit"] {
+  background: #10B981;
+  color: white;
+}
+
+.profile-buttons button[type="button"] {
+  background: #E5E7EB;
+}
+
+/* INFO DISPLAY */
+.info-display p {
+  margin-bottom: 0.8rem;
+}
+
+.info-display button {
+  margin-top: 1rem;
+  padding: 0.7rem 1.2rem;
+  background: #4F46E5;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* ORDERS */
+.orders-history {
+  background: #FFFFFF;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.orders-history h2 {
+  margin-bottom: 1.5rem;
+}
+
+/* TABLE */
+.orders-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.table-header,
+.table-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #E5E7EB;
+  font-size: 0.95rem;
+}
+
+.table-header {
+  font-weight: 600;
+}
+
+.table-row span {
+  display: flex;
+  align-items: center;
+}
+
+/* STATUS */
+.status {
+  font-weight: 500;
+}
+
+.status.completed {
+  color: #10B981;
+}
+
+/* RESPONSIVE TABLE */
+@media (max-width: 600px) {
+  .table-header {
+    display: none;
+  }
+
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+    padding: 1rem 0;
+  }
+
+  .table-row span::before {
+    content: attr(data-label);
+    font-weight: 600;
+    margin-right: 5px;
+  }
+}
