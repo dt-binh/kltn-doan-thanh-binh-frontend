@@ -10,6 +10,11 @@ import Register from "./pages/user/Register"
 import AdminLayout from "./pages/admin/AdminLayout"
 import Dashboard from "./pages/admin/Dashboard"
 import Users from "./pages/admin/Users"
+import BooksPage from "./pages/admin/Books"
+import Genres from "./pages/admin/Genres"
+import Authors from "./pages/admin/Authors"
+import Orders from "./pages/admin/Orders"
+
 function App() {
   return (
     <Router>
@@ -27,7 +32,10 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="users" element={<Users />} />
-            
+            <Route path="books" element={<BooksPage />} />
+            <Route path="genres" element={<Genres />} />
+            <Route path="authors" element={<Authors />} />
+            <Route path="orders" element={<Orders />} />
           </Route>
 
         </Routes>
