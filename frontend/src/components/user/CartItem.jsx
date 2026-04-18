@@ -1,5 +1,4 @@
 import React from 'react';
-// Styles from Cart.scss global
 
 const CartItem = ({ item, updateQuantity, removeItem }) => {
   return (

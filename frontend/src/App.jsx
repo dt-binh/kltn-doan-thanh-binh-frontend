@@ -14,6 +14,7 @@ import BooksPage from "./pages/admin/Books"
 import Genres from "./pages/admin/Genres"
 import Authors from "./pages/admin/Authors"
 import Orders from "./pages/admin/Orders"
+import "./App.css"
 
 function App() {
   return (

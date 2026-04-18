@@ -1,67 +1,70 @@
 .admin-sidebar {
-  width: 280px;
-  background: linear-gradient(180deg, #1E293B 0%, #334155 100%);
-  color: white;
+  width: 250px;
   height: 100vh;
+  background: #1e1e2f;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
   position: fixed;
-  left: 0;
   top: 0;
-  z-index: 200;
-  padding: 2rem 0;
-  box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+  left: 0;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
 }
 
-.admin-sidebar .sidebar-header {
-  padding: 0 2rem 2rem;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+.sidebar-header {
+  padding: 0 20px;
+  margin-bottom: 20px;
 }
 
-.admin-sidebar .sidebar-header h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
+.sidebar-header h2 {
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffffff;
+  margin: 0;
+  text-align: center;
 }
 
-.admin-sidebar .sidebar-nav {
-  padding: 1rem 0;
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 15px;
 }
 
-.admin-sidebar .nav-item {
+.nav-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 2rem;
+  gap: 12px;
+  padding: 12px 15px;
+  border-radius: 10px;
   text-decoration: none;
-  color: rgba(255,255,255,0.8);
+  font-size: 15px;
   font-weight: 500;
-  transition: all 0.3s;
-  border-left: 4px solid transparent;
-}
-
-.admin-sidebar .nav-item span {
-  font-size: 1.3rem;
-}
-
-.admin-sidebar .nav-item:hover {
-  background: rgba(255,255,255,0.1);
   color: white;
-  border-left-color: #10B981; /* $secondary */
-  padding-left: 2.5rem;
+  background: transparent;
+  transition: 0.3s;
 }
 
-.admin-sidebar .nav-item.active {
-  background: rgba(16,185,129,0.2);
-  color: #10B981; /* $secondary */
-  border-left-color: #10B981;
+.nav-item span {
+  font-size: 18px;
 }
 
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  .admin-sidebar {
-    transform: translateX(-100%);
-    transition: transform 0.3s;
-  }
+.nav-item:hover {
+  background: #343454;
+  transform: translateX(5px);
+}
 
-  .admin-sidebar.open {
-    transform: translateX(0);
-  }
+.nav-item:active {
+  background: #4a4a70;
+}
+
+.nav-item[title="Coming soon"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.nav-item[title="Coming soon"]:hover {
+  background: transparent;
+  transform: none;
 }
