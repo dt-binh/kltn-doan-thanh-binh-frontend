@@ -1,20 +1,29 @@
-import React, { useState } from 'react';
-import '../../pages/admin/Dashboard.css';
+import React, { useState } from "react";
+import "./Authors.css";
 
 const Authors = () => {
-  // 🔥 DATA
+  // DATA
   const initialAuthors = [
-    { id: 1, name: 'Nguyễn Nhật Ánh', books: 25, country: 'Việt Nam' },
-    { id: 2, name: 'J.K. Rowling', books: 12, country: 'Anh' },
-    { id: 3, name: 'Haruki Murakami', books: 8, country: 'Nhật' },
+    { id: 1, name: "Nguyễn Nhật Ánh", books: 25, country: "Việt Nam" },
+    { id: 2, name: "J.K. Rowling", books: 12, country: "Anh" },
+    { id: 3, name: "Haruki Murakami", books: 8, country: "Nhật" },
   ];
 
   const [authors, setAuthors] = useState(initialAuthors);
 
-  // ================= EDIT =================
+  // EDIT
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
 
+  // ADD
+  const [isAdding, setIsAdding] = useState(false);
+  const [newAuthor, setNewAuthor] = useState({
+    name: "",
+    books: 0,
+    country: "",
+  });
+
+  // ================= EDIT =================
   const handleEdit = (author) => {
     setEditingId(author.id);
     setEditData(author);
@@ -23,15 +32,13 @@ const Authors = () => {
   const handleChange = (e) => {
     setEditData({
       ...editData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSave = () => {
-    setAuthors(prev =>
-      prev.map(a =>
-        a.id === editingId ? editData : a
-      )
+    setAuthors((prev) =>
+      prev.map((a) => (a.id === editingId ? editData : a))
     );
     setEditingId(null);
   };
@@ -42,51 +49,50 @@ const Authors = () => {
 
   // ================= DELETE =================
   const handleDelete = (id) => {
-    if (window.confirm('Xóa tác giả này?')) {
-      setAuthors(authors.filter(a => a.id !== id));
+    if (window.confirm("Xóa tác giả này?")) {
+      setAuthors((prev) => prev.filter((a) => a.id !== id));
     }
   };
 
   // ================= ADD =================
-  const [isAdding, setIsAdding] = useState(false);
-  const [newAuthor, setNewAuthor] = useState({
-    name: '',
-    books: 0,
-    country: ''
-  });
-
   const handleAdd = () => {
-    if (!newAuthor.name) return alert('Nhập tên tác giả!');
+    if (!newAuthor.name) return alert("Nhập tên tác giả!");
+    if (!newAuthor.country) return alert("Nhập quốc gia!");
 
     const author = {
       ...newAuthor,
-      id: Date.now()
+      id: Date.now(),
+      books: Number(newAuthor.books),
     };
 
-    setAuthors([author, ...authors]);
+    setAuthors((prev) => [author, ...prev]);
 
     setNewAuthor({
-      name: '',
+      name: "",
       books: 0,
-      country: ''
+      country: "",
     });
 
     setIsAdding(false);
   };
 
   return (
-    <div className="admin-page">
-
+    <div className="authors-page">
       {/* HEADER */}
-      <div className="header">
+      <div className="authors-header">
         <h2>Quản lý tác giả</h2>
-        <button className="btn-add" onClick={() => setIsAdding(true)}>
+
+        <button
+          className="authors-btn-add"
+          onClick={() => setIsAdding(!isAdding)}
+        >
           ➕ Thêm tác giả
         </button>
       </div>
 
-      <div className="table-container">
-        <table className="admin-table">
+      {/* TABLE */}
+      <div className="authors-table-container">
+        <table className="authors-table">
           <thead>
             <tr>
               <th>ID</th>
@@ -98,14 +104,14 @@ const Authors = () => {
           </thead>
 
           <tbody>
-
-            {/* 🔥 ROW ADD */}
+            {/* ADD ROW */}
             {isAdding && (
-              <tr>
+              <tr className="add-row">
                 <td>--</td>
 
                 <td>
                   <input
+                    placeholder="Nhập tên tác giả"
                     value={newAuthor.name}
                     onChange={(e) =>
                       setNewAuthor({ ...newAuthor, name: e.target.value })
@@ -125,6 +131,7 @@ const Authors = () => {
 
                 <td>
                   <input
+                    placeholder="Nhập quốc gia"
                     value={newAuthor.country}
                     onChange={(e) =>
                       setNewAuthor({ ...newAuthor, country: e.target.value })
@@ -132,15 +139,22 @@ const Authors = () => {
                   />
                 </td>
 
-                <td>
-                  <button onClick={handleAdd}>💾 Lưu</button>
-                  <button onClick={() => setIsAdding(false)}>❌ Hủy</button>
+                <td className="action-cell">
+                  <button className="btn-save" onClick={handleAdd}>
+                    💾 Lưu
+                  </button>
+                  <button
+                    className="btn-cancel"
+                    onClick={() => setIsAdding(false)}
+                  >
+                    ❌ Hủy
+                  </button>
                 </td>
               </tr>
             )}
 
-            {/* 🔥 DATA */}
-            {authors.map(author => (
+            {/* DATA */}
+            {authors.map((author) => (
               <tr key={author.id}>
                 <td>{author.id}</td>
 
@@ -181,22 +195,35 @@ const Authors = () => {
                   )}
                 </td>
 
-                <td>
+                <td className="action-cell">
                   {editingId === author.id ? (
                     <>
-                      <button onClick={handleSave}>💾 Lưu</button>
-                      <button onClick={handleCancel}>❌ Hủy</button>
+                      <button className="btn-save" onClick={handleSave}>
+                        💾 Lưu
+                      </button>
+                      <button className="btn-cancel" onClick={handleCancel}>
+                        ❌ Hủy
+                      </button>
                     </>
                   ) : (
                     <>
-                      <button onClick={() => handleEdit(author)}>✏️ Sửa</button>
-                      <button onClick={() => handleDelete(author.id)}>🗑 Xóa</button>
+                      <button
+                        className="btn-edit"
+                        onClick={() => handleEdit(author)}
+                      >
+                        ✏️ Sửa
+                      </button>
+                      <button
+                        className="btn-delete"
+                        onClick={() => handleDelete(author.id)}
+                      >
+                        🗑 Xóa
+                      </button>
                     </>
                   )}
                 </td>
               </tr>
             ))}
-
           </tbody>
         </table>
       </div>

@@ -1,0 +1,157 @@
+.authors-page {
+  font-family: "Segoe UI", sans-serif;
+}
+
+.authors-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.authors-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #111827;
+}
+
+/* ADD BUTTON */
+.authors-btn-add {
+  border: none;
+  padding: 10px 16px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  background: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+  transition: 0.25s;
+}
+
+.authors-btn-add:hover {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+/* TABLE CONTAINER */
+.authors-table-container {
+  width: 100%;
+  overflow-x: auto;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  padding: 12px;
+}
+
+/* TABLE */
+.authors-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.authors-table th {
+  text-align: center;
+  padding: 14px 12px;
+  background: #f9fafb;
+  font-size: 14px;
+  font-weight: 800;
+  color: #111827;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.authors-table td {
+  padding: 14px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.authors-table tr:hover td {
+  background: #f3f4f6;
+  transition: 0.2s;
+}
+
+/* INPUT */
+.authors-table input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  outline: none;
+  font-size: 14px;
+}
+
+.authors-table input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* ACTION CELL */
+.action-cell {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* BUTTON COMMON */
+.btn-save,
+.btn-cancel,
+.btn-edit,
+.btn-delete {
+  border: none;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+/* SAVE */
+.btn-save {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+
+.btn-save:hover {
+  background: rgba(34, 197, 94, 0.25);
+}
+
+/* CANCEL */
+.btn-cancel {
+  background: rgba(107, 114, 128, 0.15);
+  color: #374151;
+}
+
+.btn-cancel:hover {
+  background: rgba(107, 114, 128, 0.25);
+}
+
+/* EDIT */
+.btn-edit {
+  background: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+}
+
+.btn-edit:hover {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+/* DELETE */
+.btn-delete {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+.btn-delete:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+/* ADD ROW */
+.add-row td {
+  background: rgba(59, 130, 246, 0.05);
+}

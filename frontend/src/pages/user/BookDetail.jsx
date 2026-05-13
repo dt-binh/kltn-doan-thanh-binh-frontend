@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { books } from "../../data/mockData.js";
 import Header from "../../components/common/Header";
@@ -7,13 +7,11 @@ import "./BookDetail.css";
 
 const BookDetail = () => {
   const { id } = useParams();
-  const [book, setBook] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
-  useEffect(() => {
-    const foundBook = books.find((b) => b.id === parseInt(id));
-    setBook(foundBook);
+  const book = useMemo(() => {
+    return books.find((b) => b.id === parseInt(id));
   }, [id]);
 
   const addToCart = () => {

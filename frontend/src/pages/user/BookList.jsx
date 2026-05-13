@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import Header from "../../components/common/Header";
 import Footer from "../../components/common/Footer";
 import { books, genres, authors } from "../../data/mockData.js";
@@ -6,13 +6,12 @@ import BookCard from "../../components/common/BookCard";
 import "./BookList.css";
 
 const BookList = () => {
-  const [filteredBooks, setFilteredBooks] = useState(books);
   const [search, setSearch] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("");
   const [selectedAuthor, setSelectedAuthor] = useState("");
   const [sortBy, setSortBy] = useState("");
 
-  useEffect(() => {
+  const filteredBooks = useMemo(() => {
     let result = [...books];
 
     if (search) {
@@ -48,7 +47,7 @@ const BookList = () => {
         break;
     }
 
-    setFilteredBooks(result);
+    return result;
   }, [search, selectedGenre, selectedAuthor, sortBy]);
 
   return (

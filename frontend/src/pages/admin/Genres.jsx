@@ -1,21 +1,29 @@
-import React, { useState } from 'react';
-import '../../pages/admin/Dashboard.css';
+import React, { useState } from "react";
+import "./Genres.css";
 
 const Genres = () => {
-  // 🔥 DATA
+  // DATA
   const initialGenres = [
-    { id: 1, name: 'Hành động', books: 45 },
-    { id: 2, name: 'Lãng mạn', books: 32 },
-    { id: 3, name: 'Kinh dị', books: 18 },
-    { id: 4, name: 'Hài hước', books: 25 },
+    { id: 1, name: "Hành động", books: 45 },
+    { id: 2, name: "Lãng mạn", books: 32 },
+    { id: 3, name: "Kinh dị", books: 18 },
+    { id: 4, name: "Hài hước", books: 25 },
   ];
 
   const [genres, setGenres] = useState(initialGenres);
 
-  // ================= EDIT =================
+  // EDIT
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
 
+  // ADD
+  const [isAdding, setIsAdding] = useState(false);
+  const [newGenre, setNewGenre] = useState({
+    name: "",
+    books: 0,
+  });
+
+  // ================= EDIT =================
   const handleEdit = (genre) => {
     setEditingId(genre.id);
     setEditData(genre);
@@ -24,15 +32,13 @@ const Genres = () => {
   const handleChange = (e) => {
     setEditData({
       ...editData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSave = () => {
-    setGenres(prev =>
-      prev.map(g =>
-        g.id === editingId ? editData : g
-      )
+    setGenres((prev) =>
+      prev.map((g) => (g.id === editingId ? editData : g))
     );
     setEditingId(null);
   };
@@ -43,49 +49,48 @@ const Genres = () => {
 
   // ================= DELETE =================
   const handleDelete = (id) => {
-    if (window.confirm('Xóa thể loại này?')) {
-      setGenres(genres.filter(g => g.id !== id));
+    if (window.confirm("Xóa thể loại này?")) {
+      setGenres((prev) => prev.filter((g) => g.id !== id));
     }
   };
 
   // ================= ADD =================
-  const [isAdding, setIsAdding] = useState(false);
-  const [newGenre, setNewGenre] = useState({
-    name: '',
-    books: 0
-  });
-
   const handleAdd = () => {
-    if (!newGenre.name) return alert('Nhập tên thể loại!');
+    if (!newGenre.name) return alert("Nhập tên thể loại!");
 
     const genre = {
       ...newGenre,
-      id: Date.now()
+      id: Date.now(),
+      books: Number(newGenre.books),
     };
 
-    setGenres([genre, ...genres]);
+    setGenres((prev) => [genre, ...prev]);
 
     setNewGenre({
-      name: '',
-      books: 0
+      name: "",
+      books: 0,
     });
 
     setIsAdding(false);
   };
 
   return (
-    <div className="admin-page">
-
+    <div className="genres-page">
       {/* HEADER */}
-      <div className="header">
+      <div className="genres-header">
         <h2>Quản lý thể loại</h2>
-        <button className="btn-add" onClick={() => setIsAdding(true)}>
+
+        <button
+          className="genres-btn-add"
+          onClick={() => setIsAdding(!isAdding)}
+        >
           ➕ Thêm thể loại
         </button>
       </div>
 
-      <div className="table-container">
-        <table className="admin-table">
+      {/* TABLE */}
+      <div className="genres-table-container">
+        <table className="genres-table">
           <thead>
             <tr>
               <th>ID</th>
@@ -96,14 +101,14 @@ const Genres = () => {
           </thead>
 
           <tbody>
-
-            {/* 🔥 ROW ADD */}
+            {/* ADD ROW */}
             {isAdding && (
-              <tr>
+              <tr className="add-row">
                 <td>--</td>
 
                 <td>
                   <input
+                    placeholder="Nhập tên thể loại"
                     value={newGenre.name}
                     onChange={(e) =>
                       setNewGenre({ ...newGenre, name: e.target.value })
@@ -121,15 +126,22 @@ const Genres = () => {
                   />
                 </td>
 
-                <td>
-                  <button onClick={handleAdd}>💾 Lưu</button>
-                  <button onClick={() => setIsAdding(false)}>❌ Hủy</button>
+                <td className="action-cell">
+                  <button className="btn-save" onClick={handleAdd}>
+                    💾 Lưu
+                  </button>
+                  <button
+                    className="btn-cancel"
+                    onClick={() => setIsAdding(false)}
+                  >
+                    ❌ Hủy
+                  </button>
                 </td>
               </tr>
             )}
 
-            {/* 🔥 DATA */}
-            {genres.map(genre => (
+            {/* DATA */}
+            {genres.map((genre) => (
               <tr key={genre.id}>
                 <td>{genre.id}</td>
 
@@ -158,22 +170,35 @@ const Genres = () => {
                   )}
                 </td>
 
-                <td>
+                <td className="action-cell">
                   {editingId === genre.id ? (
                     <>
-                      <button onClick={handleSave}>💾 Lưu</button>
-                      <button onClick={handleCancel}>❌ Hủy</button>
+                      <button className="btn-save" onClick={handleSave}>
+                        💾 Lưu
+                      </button>
+                      <button className="btn-cancel" onClick={handleCancel}>
+                        ❌ Hủy
+                      </button>
                     </>
                   ) : (
                     <>
-                      <button onClick={() => handleEdit(genre)}>✏️ Sửa</button>
-                      <button onClick={() => handleDelete(genre.id)}>🗑 Xóa</button>
+                      <button
+                        className="btn-edit"
+                        onClick={() => handleEdit(genre)}
+                      >
+                        ✏️ Sửa
+                      </button>
+                      <button
+                        className="btn-delete"
+                        onClick={() => handleDelete(genre.id)}
+                      >
+                        🗑 Xóa
+                      </button>
                     </>
                   )}
                 </td>
               </tr>
             ))}
-
           </tbody>
         </table>
       </div>

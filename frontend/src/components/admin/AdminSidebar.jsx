@@ -18,19 +18,19 @@ const AdminSidebar = () => {
           Quản lý người dùng
         </Link>
         {/* TODO: Implement these pages */}
-        <Link to="/admin/books" className="nav-item" title="Coming soon">
+        <Link to="/admin/books" className="nav-item" >
           <span>📚</span>
           Quản lý truyện
         </Link>
-        <Link to="/admin/genres" className="nav-item" title="Coming soon">
+        <Link to="/admin/genres" className="nav-item" >
           <span>📂</span>
           Quản lý thể loại
         </Link>
-        <Link to="/admin/authors" className="nav-item" title="Coming soon">
+        <Link to="/admin/authors" className="nav-item">
           <span>✍️</span>
           Quản lý tác giả
         </Link>
-        <Link to="/admin/orders" className="nav-item" title="Coming soon">
+        <Link to="/admin/orders" className="nav-item" >
           <span>📋</span>
           Quản lý đơn hàng
         </Link>
