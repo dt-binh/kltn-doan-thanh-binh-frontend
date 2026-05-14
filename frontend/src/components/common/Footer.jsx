@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="container">
         <div className="footer-top">
           <div className="footer-col">
-            <h3 className="footer-logo">Smile Shop</h3>
+            <h3 className="footer-logo">Books Shop</h3>
             <p className="footer-desc">
               Web bán truyện tranh uy tín, giá tốt, cập nhật truyện mới mỗi ngày.
             </p>
@@ -15,7 +15,7 @@ const Footer = () => {
             <div className="footer-contact">
               <p>📍 Hà Nội, Việt Nam</p>
               <p>📞 0123 456 789</p>
-              <p>✉️ smilesupport@gmail.com</p>
+              <p>✉️ bookssupport@gmail.com</p>
             </div>
           </div>
 
@@ -56,7 +56,7 @@ const Footer = () => {
         </div>
 
         <div className="footer-bottom">
-          <p>© 2026 Smile Shop. All rights reserved.</p>
+          <p>© 2026 Books shop. All rights reserved.</p>
         </div>
       </div>
     </footer>

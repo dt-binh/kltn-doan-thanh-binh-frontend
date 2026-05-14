@@ -1,32 +1,62 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import '../../pages/user/Register.css';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+
+import "../../pages/user/Register.css";
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    username: '',
-    password: '',
-    confirmPassword: ''
+    name: "",
+    email: "",
+    username: "",
+    password: "",
+    confirmPassword: "",
   });
-  const [error, setError] = useState('');
+
+  const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError("");
+
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      setError('Mật khẩu không khớp');
+
+    // check password
+    if (
+      formData.password !==
+      formData.confirmPassword
+    ) {
+      setError("Mật khẩu không khớp");
       return;
     }
-    // Mock register
-    console.log('Register:', formData);
-    alert('Đăng ký thành công! (Demo)');
-    navigate('/login');
+
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/register",
+        {
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        }
+      );
+
+      alert(res.data.message);
+
+      navigate("/login");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+        "Đăng ký thất bại"
+      );
+    }
   };
 
   return (
@@ -34,66 +64,101 @@ const Register = () => {
       <div className="container">
         <div className="auth-card">
           <h1>Đăng ký tài khoản</h1>
-          <p>Tạo tài khoản để mua truyện dễ dàng hơn</p>
-          
-          {error && <div className="error-msg">{error}</div>}
-          
+
+          <p>
+            Tạo tài khoản để mua truyện
+            dễ dàng hơn
+          </p>
+
+          {error && (
+            <div className="error-msg">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
+            {/* Họ tên */}
             <div className="form-group">
               <label>Họ tên</label>
-              <input 
-                type="text" 
+
+              <input
+                type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                required 
+                required
               />
             </div>
+
+            {/* Email */}
             <div className="form-group">
               <label>Email</label>
-              <input 
-                type="email" 
+
+              <input
+                type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                required 
+                required
               />
             </div>
+
+            {/* Username */}
             <div className="form-group">
-              <label>Tên đăng nhập</label>
-              <input 
-                type="text" 
+              <label>
+                Tên đăng nhập
+              </label>
+
+              <input
+                type="text"
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                required 
+                required
               />
             </div>
+
+            {/* Password */}
             <div className="form-group">
               <label>Mật khẩu</label>
-              <input 
-                type="password" 
+
+              <input
+                type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                required 
+                required
               />
             </div>
+
+            {/* Confirm Password */}
             <div className="form-group">
-              <label>Xác nhận mật khẩu</label>
-              <input 
-                type="password" 
+              <label>
+                Xác nhận mật khẩu
+              </label>
+
+              <input
+                type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                required 
+                required
               />
             </div>
-            <button type="submit" className="btn-primary">Đăng ký</button>
+
+            <button
+              type="submit"
+              className="btn-primary"
+            >
+              Đăng ký
+            </button>
           </form>
-          
+
           <p className="auth-link">
-            Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
+            Đã có tài khoản?{" "}
+            <Link to="/login">
+              Đăng nhập
+            </Link>
           </p>
         </div>
       </div>
@@ -102,4 +167,3 @@ const Register = () => {
 };
 
 export default Register;
-

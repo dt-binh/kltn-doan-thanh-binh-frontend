@@ -15,7 +15,7 @@ const Home = () => {
       <main className="home-main">
         <div className="home-banner">
           <div className="home-banner-content">
-            <h1>Chào mừng đến với Smile Shop</h1>
+            <h1>Chào mừng đến với BOOKS SHOP</h1>
             <p>Khám phá những bộ truyện tranh tuyệt vời nhất!</p>
             <Link to="/books" className="home-btn-primary">
               Mua ngay
