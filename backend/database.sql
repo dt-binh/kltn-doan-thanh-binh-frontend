@@ -1,4 +1,9 @@
-CREATE DATABASE IF NOT EXISTS truyen_db
+-- =========================================================
+-- RESET DATABASE
+-- =========================================================
+DROP DATABASE IF EXISTS truyen_db;
+
+CREATE DATABASE truyen_db
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
@@ -9,241 +14,172 @@ USE truyen_db;
 -- =========================================================
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
+
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    avatar VARCHAR(255) DEFAULT NULL,
 
-    role ENUM('user', 'admin') DEFAULT 'user',
+    avatar VARCHAR(255)
+    DEFAULT 'default-avatar.png',
+
+    role ENUM('user', 'admin')
+    DEFAULT 'user',
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- =========================================================
--- CATEGORIES
+-- GENRES
 -- =========================================================
-CREATE TABLE categories (
+CREATE TABLE genres (
     id INT AUTO_INCREMENT PRIMARY KEY,
+
     name VARCHAR(100) NOT NULL UNIQUE,
-    slug VARCHAR(120) NOT NULL UNIQUE
+
+    books INT DEFAULT 0
 );
 
 -- =========================================================
--- STORIES
+-- AUTHORS
 -- =========================================================
-CREATE TABLE stories (
+CREATE TABLE authors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    name VARCHAR(150) NOT NULL UNIQUE,
+
+    country VARCHAR(100),
+
+    books INT DEFAULT 0
+);
+
+-- =========================================================
+-- BOOKS
+-- =========================================================
+CREATE TABLE books (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
     title VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) NOT NULL UNIQUE,
 
-    author VARCHAR(100) DEFAULT NULL,
+    author_id INT NOT NULL,
+    genre_id INT NOT NULL,
+
+    price INT NOT NULL DEFAULT 0,
+
+    rating DECIMAL(3,2)
+    DEFAULT 0,
+
+    views INT DEFAULT 0,
+
+    image VARCHAR(255),
 
     description TEXT,
 
-    cover_image VARCHAR(255) DEFAULT NULL,
-    banner_image VARCHAR(255) DEFAULT NULL,
-
-    status ENUM('ongoing', 'completed') DEFAULT 'ongoing',
-
-    views INT DEFAULT 0,
-    likes INT DEFAULT 0,
-
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP
+    ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (author_id)
+    REFERENCES authors(id),
+
+    FOREIGN KEY (genre_id)
+    REFERENCES genres(id)
 );
 
 -- =========================================================
--- STORY CATEGORIES
+-- CART ITEMS
 -- =========================================================
-CREATE TABLE story_categories (
-    story_id INT NOT NULL,
-    category_id INT NOT NULL,
-
-    PRIMARY KEY (story_id, category_id),
-
-    FOREIGN KEY (story_id)
-    REFERENCES stories(id)
-    ON DELETE CASCADE,
-
-    FOREIGN KEY (category_id)
-    REFERENCES categories(id)
-    ON DELETE CASCADE
-);
-
--- =========================================================
--- CHAPTERS
--- =========================================================
-CREATE TABLE chapters (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    story_id INT NOT NULL,
-
-    chapter_number FLOAT NOT NULL,
-
-    title VARCHAR(255) DEFAULT NULL,
-
-    content LONGTEXT NOT NULL,
-
-    views INT DEFAULT 0,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (story_id)
-    REFERENCES stories(id)
-    ON DELETE CASCADE
-);
-
--- =========================================================
--- COMMENTS
--- =========================================================
-CREATE TABLE comments (
+CREATE TABLE cart_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
     user_id INT NOT NULL,
-    story_id INT NOT NULL,
+    book_id INT NOT NULL,
 
-    content TEXT NOT NULL,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    quantity INT DEFAULT 1,
 
     FOREIGN KEY (user_id)
     REFERENCES users(id)
     ON DELETE CASCADE,
 
-    FOREIGN KEY (story_id)
-    REFERENCES stories(id)
+    FOREIGN KEY (book_id)
+    REFERENCES books(id)
     ON DELETE CASCADE
 );
 
 -- =========================================================
--- FAVORITES
+-- ORDERS
 -- =========================================================
-CREATE TABLE favorites (
-    user_id INT NOT NULL,
-    story_id INT NOT NULL,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (user_id, story_id),
-
-    FOREIGN KEY (user_id)
-    REFERENCES users(id)
-    ON DELETE CASCADE,
-
-    FOREIGN KEY (story_id)
-    REFERENCES stories(id)
-    ON DELETE CASCADE
-);
-
--- =========================================================
--- READING HISTORY
--- =========================================================
-CREATE TABLE reading_history (
+CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
     user_id INT NOT NULL,
-    story_id INT NOT NULL,
-    chapter_id INT NOT NULL,
 
-    last_read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total INT NOT NULL DEFAULT 0,
+
+    status VARCHAR(50) NOT NULL,
+
+    order_date DATE NOT NULL,
 
     FOREIGN KEY (user_id)
     REFERENCES users(id)
-    ON DELETE CASCADE,
-
-    FOREIGN KEY (story_id)
-    REFERENCES stories(id)
-    ON DELETE CASCADE,
-
-    FOREIGN KEY (chapter_id)
-    REFERENCES chapters(id)
     ON DELETE CASCADE
 );
 
 -- =========================================================
--- SAMPLE CATEGORIES
+-- ORDER ITEMS
 -- =========================================================
-INSERT INTO categories (name, slug) VALUES
-('Action', 'action'),
-('Adventure', 'adventure'),
-('Comedy', 'comedy'),
-('Drama', 'drama'),
-('Fantasy', 'fantasy'),
-('Romance', 'romance'),
-('Horror', 'horror'),
-('School Life', 'school-life'),
-('Sci-Fi', 'sci-fi'),
-('Slice of Life', 'slice-of-life');
+CREATE TABLE order_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
 
--- =========================================================
--- SAMPLE STORIES
--- =========================================================
-INSERT INTO stories (
-    title,
-    slug,
-    author,
-    description,
-    cover_image,
-    status
-) VALUES
-(
-    'Huyết Chiến Ma Thần',
-    'huyet-chien-ma-than',
-    'Bee Author',
-    'Một thiếu niên bước vào con đường tu luyện đầy máu và bóng tối.',
-    'uploads/covers/story1.jpg',
-    'ongoing'
-),
-(
-    'Thanh Xuân Học Đường',
-    'thanh-xuan-hoc-duong',
-    'Bee Author',
-    'Câu chuyện tuổi trẻ tại ngôi trường cấp ba đầy cảm xúc.',
-    'uploads/covers/story2.jpg',
-    'completed'
+    order_id INT NOT NULL,
+    book_id INT NOT NULL,
+
+    quantity INT DEFAULT 1,
+
+    price INT NOT NULL,
+
+    FOREIGN KEY (order_id)
+    REFERENCES orders(id)
+    ON DELETE CASCADE,
+
+    FOREIGN KEY (book_id)
+    REFERENCES books(id)
+    ON DELETE CASCADE
 );
 
 -- =========================================================
--- SAMPLE CHAPTERS
+-- SAMPLE GENRES
 -- =========================================================
-INSERT INTO chapters (
-    story_id,
-    chapter_number,
-    title,
-    content
-) VALUES
-(
-    1,
-    1,
-    'Khởi đầu',
-    'Nội dung chapter 1...'
-),
-(
-    1,
-    2,
-    'Bí mật cổ xưa',
-    'Nội dung chapter 2...'
-),
-(
-    2,
-    1,
-    'Ngày đầu nhập học',
-    'Nội dung chapter 1 của truyện học đường...'
-);
+INSERT INTO genres (name, books) VALUES
+('Hành động', 45),
+('Lãng mạn', 32),
+('Kinh dị', 18),
+('Hài hước', 25),
+('Fantasy', 10),
+('Văn học thiếu nhi', 7),
+('Sci-Fi', 6),
+('Self-help', 4),
+('Văn học Việt', 8);
 
 -- =========================================================
--- SAMPLE STORY CATEGORIES
+-- SAMPLE AUTHORS
 -- =========================================================
-INSERT INTO story_categories (story_id, category_id) VALUES
-(1, 1),
-(1, 5),
-(2, 4),
-(2, 6);
+INSERT INTO authors (name, country, books) VALUES
+('J.K. Rowling', 'Anh', 12),
+('Tô Hoài', 'Việt Nam', 10),
+('Nguyễn Nhật Ánh', 'Việt Nam', 8),
+('J.R.R. Tolkien', 'Anh', 7),
+('Dale Carnegie', 'Mỹ', 6),
+('Vũ Trọng Phụng', 'Việt Nam', 5),
+('George Orwell', 'Anh', 4);
 
+-- =========================================================
+-- SAMPLE USERS
+-- Password: 123456
+-- =========================================================
 INSERT INTO users (
     username,
     email,
@@ -263,3 +199,123 @@ VALUES
     '$2b$10$3euPcmQFCiblsZeEu5s7p.9Jx4Q1UQK4q0vB9xvG5LhX5gYyJw8U2',
     'user'
 );
+
+-- =========================================================
+-- SAMPLE BOOKS
+-- =========================================================
+INSERT INTO books (
+    title,
+    author_id,
+    genre_id,
+    price,
+    rating,
+    views,
+    image,
+    description
+)
+VALUES
+(
+    'Harry Potter và Hòn đá Phù thủy',
+    1,
+    5,
+    150000,
+    4.8,
+    120,
+    'https://images.unsplash.com/photo-1611100481087-2eb79ea4cf83?w=300&h=450&fit=crop',
+    'Cuốn sách kinh điển về cậu bé phù thủy Harry Potter.'
+),
+
+(
+    'Dế Mèn phiêu lưu ký',
+    2,
+    6,
+    80000,
+    4.5,
+    98,
+    'https://via.placeholder.com/300x450/4F46E5/FFFFFF?text=Dế+Mèn',
+    'Tác phẩm bất hủ của văn học Việt Nam.'
+),
+
+(
+    'Cho tôi xin một vé đi tuổi thơ',
+    3,
+    9,
+    120000,
+    4.7,
+    110,
+    'https://via.placeholder.com/300x450/10B981/FFFFFF?text=Tuổi+Thơ',
+    'Tác phẩm nổi tiếng của Nguyễn Nhật Ánh.'
+),
+
+(
+    'The Lord of the Rings',
+    4,
+    5,
+    250000,
+    4.9,
+    220,
+    'https://images.unsplash.com/photo-1603158047734-364f505d09e1?w=300&h=450&fit=crop',
+    'Epic fantasy nổi tiếng thế giới.'
+),
+
+(
+    'Đắc nhân tâm',
+    5,
+    8,
+    90000,
+    4.6,
+    76,
+    'https://via.placeholder.com/300x450/F59E0B/FFFFFF?text=Đắc+Nhân+Tâm',
+    'Kinh điển phát triển bản thân.'
+),
+
+(
+    'Số đỏ',
+    6,
+    9,
+    65000,
+    4.4,
+    64,
+    'https://via.placeholder.com/300x450/EF4444/FFFFFF?text=Số+Đỏ',
+    'Tiểu thuyết hiện thực phê phán.'
+),
+
+(
+    '1984',
+    7,
+    7,
+    110000,
+    4.7,
+    88,
+    'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=300&h=450&fit=crop',
+    'Dystopian classic nổi tiếng.'
+);
+
+-- =========================================================
+-- SAMPLE ORDERS
+-- =========================================================
+INSERT INTO orders (
+    user_id,
+    total,
+    status,
+    order_date
+)
+VALUES
+(2, 300000, 'Đã giao', '2024-10-01'),
+(2, 150000, 'Đang xử lí', '2024-10-02'),
+(2, 500000, 'Đã hủy', '2024-10-03');
+
+-- =========================================================
+-- SAMPLE ORDER ITEMS
+-- =========================================================
+INSERT INTO order_items (
+    order_id,
+    book_id,
+    quantity,
+    price
+)
+VALUES
+(1, 1, 1, 150000),
+(1, 2, 1, 80000),
+(2, 3, 1, 120000),
+(3, 4, 2, 250000);

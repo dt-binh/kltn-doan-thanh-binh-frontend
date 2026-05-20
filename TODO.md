@@ -1,27 +1,18 @@
-# TODO - Tích hợp Backend API cho Frontend
+# TODO
 
-- [ ] Tạo `frontend/src/services/api.js` từ `backend/frontend-api-service.js`.
-- [ ] Cập nhật Auth:
-  - [x] `frontend/src/pages/user/Login.jsx` gọi `authAPI.login` + lưu token/user + redirect.
-  - [x] `frontend/src/pages/user/Register.jsx` gọi `authAPI.register` + redirect.
-  - [ ] (Nếu cần) cập nhật `frontend/src/pages/user/Profile.jsx` dùng `authAPI.getMe/updateMe`.
+## Mục tiêu: Sửa `database.sql` cho khớp với các trang bạn đang làm (frontend dùng mockData)
 
-- [ ] Cập nhật User:
-  - [ ] `frontend/src/pages/user/Home.jsx` lấy books/genres từ API.
-  - [x] `frontend/src/pages/user/BookList.jsx` thay mock bằng `booksAPI.getAll` + `genresAPI.getAll` + `authorsAPI.getAll`.
+1. Xác định frontend đang dùng dữ liệu gì (đã đọc mockData.js): books/genres/authors/orders/users.
+2. Đối chiếu database hiện tại: chỉ có `users, stories, categories, chapters...` (không có tables cho books/genres/authors/orders).
+3. Chốt hướng sửa database:
+   - (A) Tạo thêm tables tương ứng với `mockData` để admin/user có thể dùng.
+   - (B) Hoặc sửa lại frontend để dùng `stories/categories/chapters`.
+4. (Đã chốt tạm) Thực hiện hướng (A):
+   - Thêm tables `books`, `authors`, `book_authors?` (hoặc gộp vào `books.author`), `genres`, `orders`.
+5. Đồng bộ constraint/kiểu dữ liệu để khỏi lỗi khi insert/select.
+6. Update `database.sql` kèm seed dữ liệu mẫu từ `mockData.js` (ít nhất 7 books + danh sách genre/authors + users mẫu).
+7. (Nếu cần) Cập nhật backend để có endpoint trả về đúng cấu trúc tables mới.
 
-  - [ ] `frontend/src/pages/user/BookDetail.jsx` lấy book theo id bằng `booksAPI.getById`.
-  - [ ] `frontend/src/pages/user/Cart.jsx` tích hợp tạo/refresh cart (nếu có API) hoặc giữ local cart nhưng đồng bộ book data từ API.
-  - [ ] `frontend/src/pages/user/Checkout.jsx` tạo order bằng `ordersAPI.create` + điều hướng sau khi đặt.
-- [ ] Cập nhật Admin:
-  - [ ] `frontend/src/pages/admin/Dashboard.jsx` gọi `statsAPI.get`.
-  - [ ] `frontend/src/pages/admin/Users.jsx` gọi `usersAPI.getAll` + toggle status/delete.
-  - [ ] `frontend/src/pages/admin/Orders.jsx` gọi `ordersAPI.getAll` + update status/delete.
-  - [ ] `frontend/src/pages/admin/Books.jsx` gọi `booksAPI.getAll` + CRUD.
-  - [ ] `frontend/src/pages/admin/Genres.jsx` gọi `genresAPI.getAll` + CRUD.
-  - [ ] `frontend/src/pages/admin/Authors.jsx` gọi `authorsAPI.getAll` + CRUD.
-- [ ] Đồng bộ token cho tất cả request (đã có trong api.js).
-- [ ] Chạy thử:
-  - [ ] Backend seed + chạy server.
-  - [ ] Frontend chạy + test luồng user + admin.
+- [x] Đã sửa `backend/database.sql` để thêm tables `genres/authors/books/orders` phù hợp với mockData/front-end admin/user.
+
 
