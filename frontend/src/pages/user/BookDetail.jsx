@@ -1,26 +1,54 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { books } from "../../data/mockData.js";
+import axios from "axios";
 import Header from "../../components/common/Header";
 import Footer from "../../components/common/Footer";
 import "./BookDetail.css";
 
 const BookDetail = () => {
   const { id } = useParams();
+  const [book, setBook] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
-  const book = useMemo(() => {
-    return books.find((b) => b.id === parseInt(id));
+  useEffect(() => {
+    const fetchBook = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/books/${id}`);
+        setBook(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin sách:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBook();
   }, [id]);
 
-  const addToCart = () => {
-    console.log("Added to cart:", { ...book, quantity });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+  const addToCart = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Vui lòng đăng nhập để thêm vào giỏ hàng");
+      return;
+    }
+
+    try {
+      await axios.post(
+        "http://localhost:5000/api/cart",
+        { book_id: id, quantity },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+    } catch (error) {
+      console.error("Lỗi thêm giỏ hàng:", error);
+      alert("Có lỗi xảy ra khi thêm vào giỏ hàng");
+    }
   };
 
-  if (!book) return <div className="loading">Đang tải...</div>;
+  if (loading) return <div className="loading">Đang tải...</div>;
+  if (!book) return <div className="loading">Không tìm thấy sách.</div>;
 
   return (
     <>
@@ -48,10 +76,10 @@ const BookDetail = () => {
 
             <div className="detail-info">
               <h1>{book.title}</h1>
-              <p className="author">Tác giả: {book.author}</p>
+              <p className="author">Tác giả: {book.author_name}</p>
 
               <div className="meta">
-                <span className="genre">{book.genre}</span>
+                <span className="genre">{book.genre_name}</span>
                 <div className="rating">
                   {"★".repeat(Math.floor(book.rating))}
                   {"☆".repeat(5 - Math.floor(book.rating))}

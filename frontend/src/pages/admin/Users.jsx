@@ -1,22 +1,55 @@
-import React, { useState } from "react";
-import { users as initialUsers } from "../../data/mockData";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "./Users.css";
 
 const Users = () => {
-  const [users, setUsers] = useState(initialUsers);
+  const navigate = useNavigate();
+  const [users, setUsers] = useState([]);
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    const userStr = localStorage.getItem("user");
+    const user = userStr ? JSON.parse(userStr) : null;
+
+    if (!token || !user) {
+      navigate("/login");
+      return;
+    }
+    if (user.role !== "admin") {
+      navigate("/");
+      return;
+    }
+    try {
+      const res = await axios.get("http://localhost:5000/api/users", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUsers(res.data);
+    } catch (error) {
+      console.error("Lỗi lấy user:", error);
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    }
+  };
 
   // Toggle trạng thái
-  const toggleStatus = (id) => {
-    setUsers((prev) =>
-      prev.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              status: user.status === "active" ? "inactive" : "active",
-            }
-          : user
-      )
-    );
+  const toggleStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    try {
+      await axios.put(`http://localhost:5000/api/users/${id}/status`, { status: newStatus }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchUsers();
+    } catch (error) {
+      console.error("Lỗi cập nhật user", error);
+      alert("Lỗi cập nhật!");
+    }
   };
 
   return (
@@ -30,6 +63,7 @@ const Users = () => {
               <th>ID</th>
               <th>Tên</th>
               <th>Email</th>
+              <th>Quyền</th>
               <th>Ngày đăng ký</th>
               <th>Trạng thái</th>
               <th>Hành động</th>
@@ -37,15 +71,15 @@ const Users = () => {
           </thead>
 
           <tbody>
-            {users.slice(0, 10).map((user) => (
+            {users.map((user) => (
               <tr key={user.id}>
                 <td>{user.id}</td>
-                <td>{user.name}</td>
+                <td>{user.username}</td>
                 <td>{user.email}</td>
+                <td>{user.role}</td>
 
                 <td>
-                  {user.createdAt ||
-                    new Date(user.id * 86400000).toLocaleDateString("vi-VN")}
+                  {new Date(user.created_at).toLocaleDateString("vi-VN")}
                 </td>
 
                 {/* STATUS */}
@@ -61,14 +95,16 @@ const Users = () => {
 
                 {/* ACTION */}
                 <td className="action-cell">
-                  <button
-                    className={
-                      user.status === "active" ? "btn-lock" : "btn-unlock"
-                    }
-                    onClick={() => toggleStatus(user.id)}
-                  >
-                    {user.status === "active" ? "🔒 Khóa" : "🔓 Mở"}
-                  </button>
+                  {user.role !== 'admin' && (
+                    <button
+                      className={
+                        user.status === "active" ? "btn-lock" : "btn-unlock"
+                      }
+                      onClick={() => toggleStatus(user.id, user.status)}
+                    >
+                      {user.status === "active" ? "🔒 Khóa" : "🔓 Mở"}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
@@ -11,6 +11,15 @@ const Login = () => {
 
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user) {
+      if (user.role === "admin") navigate("/admin");
+      else navigate("/");
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     setError("");
@@ -47,7 +56,11 @@ const Login = () => {
 
       alert("Đăng nhập thành công!");
 
-      navigate("/");
+      if (res.data.user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       setError(
         err.response?.data?.message ||

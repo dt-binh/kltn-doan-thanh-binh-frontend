@@ -1,9 +1,34 @@
-import React, { useState } from "react";
-import { books as initialBooks } from "../../data/mockData";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "./Books.css";
 
+// Component hiển thị ảnh chống nhấp nháy
+const BookImage = ({ src, alt }) => {
+  const [error, setError] = useState(false);
+  const imageUrl = error || !src ? "https://placehold.co/45x65?text=No+Img" : src;
+
+  return (
+    <img
+      src={imageUrl}
+      alt={alt}
+      style={{
+        width: "45px",
+        height: "65px",
+        objectFit: "cover",
+        borderRadius: "6px",
+        border: "1px solid #e5e7eb",
+      }}
+      onError={() => setError(true)}
+    />
+  );
+};
+
 const Books = () => {
-  const [books, setBooks] = useState(initialBooks);
+  const navigate = useNavigate();
+  const [books, setBooks] = useState([]);
+  const [genres, setGenres] = useState([]);
+  const [authors, setAuthors] = useState([]);
 
   // EDIT
   const [editingId, setEditingId] = useState(null);
@@ -13,29 +38,82 @@ const Books = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [newBook, setNewBook] = useState({
     title: "",
-    author: "",
-    genre: "",
-    views: 0,
+    author_id: "",
+    genre_id: "",
+    price: 0,
+    image: "",
+    description: "",
+    views: 0
   });
+
+  const token = localStorage.getItem("token");
+
+  const fetchData = async () => {
+    const userStr = localStorage.getItem("user");
+    const user = userStr ? JSON.parse(userStr) : null;
+
+    if (!token || !user) {
+      navigate("/login");
+      return;
+    }
+    if (user.role !== "admin") {
+      navigate("/");
+      return;
+    }
+    try {
+      const [bRes, gRes, aRes] = await Promise.all([
+        axios.get("http://localhost:5000/api/books"),
+        axios.get("http://localhost:5000/api/genres"),
+        axios.get("http://localhost:5000/api/authors")
+      ]);
+      setBooks(bRes.data);
+      setGenres(gRes.data);
+      setAuthors(aRes.data);
+    } catch (error) {
+      console.error("Lỗi fetch data:", error);
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   // ================= EDIT =================
   const handleEdit = (book) => {
     setEditingId(book.id);
-    setEditData(book);
+    setEditData({
+      title: book.title,
+      author_id: book.author_id,
+      genre_id: book.genre_id,
+      price: book.price,
+      image: book.image,
+      description: book.description,
+      views: book.views || 0
+    });
   };
 
-  const handleChange = (e) => {
+  const handleEditChange = (e) => {
     setEditData({
       ...editData,
       [e.target.name]: e.target.value,
     });
   };
 
-  const handleSave = () => {
-    setBooks((prev) =>
-      prev.map((book) => (book.id === editingId ? editData : book))
-    );
-    setEditingId(null);
+  const handleSave = async () => {
+    try {
+      await axios.put(`http://localhost:5000/api/books/${editingId}`, editData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEditingId(null);
+      fetchData();
+    } catch (error) {
+      console.error("Lỗi cập nhật sách", error);
+      alert("Cập nhật thất bại");
+    }
   };
 
   const handleCancel = () => {
@@ -43,34 +121,79 @@ const Books = () => {
   };
 
   // ================= DELETE =================
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Xóa truyện này?")) {
-      setBooks((prev) => prev.filter((book) => book.id !== id));
+      try {
+        await axios.delete(`http://localhost:5000/api/books/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        fetchData();
+      } catch (error) {
+        console.error("Lỗi xóa sách", error);
+      }
     }
   };
 
   // ================= ADD =================
-  const handleAdd = () => {
-    if (!newBook.title) return alert("Nhập tiêu đề!");
-    if (!newBook.author) return alert("Nhập tác giả!");
-    if (!newBook.genre) return alert("Nhập thể loại!");
-
-    const book = {
-      ...newBook,
-      id: Date.now(),
-      views: Number(newBook.views),
-    };
-
-    setBooks((prev) => [book, ...prev]);
-
+  const handleAddChange = (e) => {
     setNewBook({
-      title: "",
-      author: "",
-      genre: "",
-      views: 0,
+      ...newBook,
+      [e.target.name]: e.target.value,
     });
+  };
 
-    setIsAdding(false);
+  const handleAdd = async () => {
+    if (!newBook.title) return alert("Nhập tiêu đề!");
+    if (!newBook.author_id) return alert("Chọn tác giả!");
+    if (!newBook.genre_id) return alert("Chọn thể loại!");
+
+    try {
+      await axios.post("http://localhost:5000/api/books", newBook, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsAdding(false);
+      setNewBook({
+        title: "",
+        author_id: "",
+        genre_id: "",
+        price: 0,
+        image: "",
+        description: "",
+        views: 0
+      });
+      fetchData();
+    } catch (error) {
+      console.error("Lỗi thêm sách", error);
+      alert("Thêm thất bại");
+    }
+  };
+
+  // ================= UPLOAD IMAGE =================
+  const handleImageUpload = async (e, isEditing) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const res = await axios.post("http://localhost:5000/api/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const imageUrl = res.data.imageUrl;
+      if (isEditing) {
+        setEditData({ ...editData, image: imageUrl });
+      } else {
+        setNewBook({ ...newBook, image: imageUrl });
+      }
+    } catch (error) {
+      console.error("Lỗi tải ảnh lên:", error);
+      alert("Tải ảnh thất bại!");
+    }
   };
 
   return (
@@ -96,6 +219,8 @@ const Books = () => {
               <th>Tiêu đề</th>
               <th>Tác giả</th>
               <th>Thể loại</th>
+              <th>Giá</th>
+              <th>Hình ảnh</th>
               <th>Lượt xem</th>
               <th>Hành động</th>
             </tr>
@@ -109,41 +234,60 @@ const Books = () => {
 
                 <td>
                   <input
+                    name="title"
                     placeholder="Nhập tiêu đề"
                     value={newBook.title}
-                    onChange={(e) =>
-                      setNewBook({ ...newBook, title: e.target.value })
-                    }
+                    onChange={handleAddChange}
+                  />
+                </td>
+
+                <td>
+                  <select name="author_id" value={newBook.author_id} onChange={handleAddChange}>
+                    <option value="">Chọn tác giả</option>
+                    {authors.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  </select>
+                </td>
+
+                <td>
+                  <select name="genre_id" value={newBook.genre_id} onChange={handleAddChange}>
+                    <option value="">Chọn thể loại</option>
+                    {genres.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                  </select>
+                </td>
+
+                <td>
+                  <input
+                    type="number"
+                    name="price"
+                    value={newBook.price}
+                    onChange={handleAddChange}
+                    placeholder="Giá"
                   />
                 </td>
 
                 <td>
                   <input
-                    placeholder="Nhập tác giả"
-                    value={newBook.author}
-                    onChange={(e) =>
-                      setNewBook({ ...newBook, author: e.target.value })
-                    }
+                    type="text"
+                    name="image"
+                    value={newBook.image}
+                    onChange={handleAddChange}
+                    placeholder="URL ảnh (vd: https://...)"
+                    style={{ marginBottom: "6px" }}
                   />
-                </td>
-
-                <td>
                   <input
-                    placeholder="Nhập thể loại"
-                    value={newBook.genre}
-                    onChange={(e) =>
-                      setNewBook({ ...newBook, genre: e.target.value })
-                    }
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, false)}
+                    style={{ fontSize: "12px", width: "100%" }}
                   />
                 </td>
 
                 <td>
                   <input
                     type="number"
+                    name="views"
                     value={newBook.views}
-                    onChange={(e) =>
-                      setNewBook({ ...newBook, views: e.target.value })
-                    }
+                    onChange={handleAddChange}
                   />
                 </td>
 
@@ -171,7 +315,7 @@ const Books = () => {
                     <input
                       name="title"
                       value={editData.title}
-                      onChange={handleChange}
+                      onChange={handleEditChange}
                     />
                   ) : (
                     book.title
@@ -180,25 +324,58 @@ const Books = () => {
 
                 <td>
                   {editingId === book.id ? (
-                    <input
-                      name="author"
-                      value={editData.author}
-                      onChange={handleChange}
-                    />
+                    <select name="author_id" value={editData.author_id} onChange={handleEditChange}>
+                      <option value="">Chọn tác giả</option>
+                      {authors.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
                   ) : (
-                    book.author
+                    book.author_name
+                  )}
+                </td>
+
+                <td>
+                  {editingId === book.id ? (
+                    <select name="genre_id" value={editData.genre_id} onChange={handleEditChange}>
+                      <option value="">Chọn thể loại</option>
+                      {genres.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    </select>
+                  ) : (
+                    book.genre_name
                   )}
                 </td>
 
                 <td>
                   {editingId === book.id ? (
                     <input
-                      name="genre"
-                      value={editData.genre}
-                      onChange={handleChange}
+                      type="number"
+                      name="price"
+                      value={editData.price}
+                      onChange={handleEditChange}
                     />
                   ) : (
-                    book.genre
+                    `${book.price.toLocaleString()} ₫`
+                  )}
+                </td>
+
+                <td>
+                  {editingId === book.id ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <input
+                        type="text"
+                        name="image"
+                        value={editData.image}
+                        onChange={handleEditChange}
+                        placeholder="URL ảnh"
+                      />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, true)}
+                        style={{ fontSize: "12px", width: "100%" }}
+                      />
+                    </div>
+                  ) : (
+                    <BookImage src={book.image} alt={book.title} />
                   )}
                 </td>
 
@@ -208,7 +385,7 @@ const Books = () => {
                       type="number"
                       name="views"
                       value={editData.views}
-                      onChange={handleChange}
+                      onChange={handleEditChange}
                     />
                   ) : (
                     book.views

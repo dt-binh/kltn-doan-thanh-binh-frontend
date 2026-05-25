@@ -1,47 +1,83 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import Header from "../../components/common/Header";
 import Footer from "../../components/common/Footer";
 import CartItem from "../../components/user/CartItem";
 import "./Cart.css";
 
 const Cart = () => {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: "1",
-      book: {
-        id: 1,
-        title: "Harry Potter...",
-        author: "J.K. Rowling",
-        price: 150000,
-        image: "...",
-      },
-      quantity: 2,
-    },
-    {
-      id: "2",
-      book: {
-        id: 2,
-        title: "Dế Mèn...",
-        author: "Tô Hoài",
-        price: 80000,
-        image: "...",
-      },
-      quantity: 1,
-    },
-  ]);
+  const [cartItems, setCartItems] = useState([]);
+  const navigate = useNavigate();
 
-  const updateQuantity = (itemId, newQty) => {
-    if (newQty < 1) return;
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, quantity: newQty } : item
-      )
-    );
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  const fetchCart = async () => {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+    const user = userStr ? JSON.parse(userStr) : null;
+
+    if (!token || !user) {
+      navigate("/login");
+      return;
+    }
+    try {
+      const res = await axios.get("http://localhost:5000/api/cart", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const formattedItems = res.data.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        book: {
+          id: item.book_id,
+          title: item.title,
+          price: item.price,
+          image: item.image,
+        },
+      }));
+      setCartItems(formattedItems);
+    } catch (error) {
+      console.error("Lỗi lấy giỏ hàng:", error);
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    }
   };
 
-  const removeItem = (itemId) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== itemId));
+  const updateQuantity = async (itemId, newQty) => {
+    if (newQty < 1) return;
+    const item = cartItems.find((i) => i.id === itemId);
+    if (!item) return;
+
+    const diff = newQty - item.quantity;
+    if (diff === 0) return;
+
+    const token = localStorage.getItem("token");
+    try {
+      await axios.post(
+        "http://localhost:5000/api/cart",
+        { book_id: item.book.id, quantity: diff },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fetchCart();
+    } catch (error) {
+      console.error("Lỗi cập nhật số lượng:", error);
+    }
+  };
+
+  const removeItem = async (itemId) => {
+    const token = localStorage.getItem("token");
+    try {
+      await axios.delete(`http://localhost:5000/api/cart/${itemId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchCart();
+    } catch (error) {
+      console.error("Lỗi xóa sản phẩm:", error);
+    }
   };
 
   const total = cartItems.reduce(

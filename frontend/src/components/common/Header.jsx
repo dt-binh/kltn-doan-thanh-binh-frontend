@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Header.css";
 
 const Header = () => {
@@ -9,12 +9,25 @@ const Header = () => {
   // Dropdown user
   const [showMenu, setShowMenu] = useState(false);
 
+  // Search
+  const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+
   // Logout
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
 
     window.location.reload();
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/books?search=${encodeURIComponent(searchTerm.trim())}`);
+    } else {
+      navigate(`/books`);
+    }
   };
 
   return (
@@ -27,16 +40,18 @@ const Header = () => {
         </Link>
 
         {/* Search */}
-        <div className="header-search-bar">
+        <form className="header-search-bar" onSubmit={handleSearch}>
           <input
             type="text"
             placeholder="Tìm kiếm truyện..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
 
           <button type="submit">
             🔍︎
           </button>
-        </div>
+        </form>
 
         {/* Menu */}
         <div className="header-nav-menu">
@@ -95,11 +110,21 @@ const Header = () => {
                     </Link>
 
                     <Link
-                      to="/orders"
+                      to="/profile"
                       className="dropdown-link"
                     >
                       Đơn hàng
                     </Link>
+
+                    {user.role === "admin" && (
+                      <Link
+                        to="/admin"
+                        className="dropdown-link"
+                        style={{ color: "#ff4d6d", fontWeight: "bold", borderTop: "1px solid #eee", paddingTop: "8px" }}
+                      >
+                        ⚙️ Quản trị Admin
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>

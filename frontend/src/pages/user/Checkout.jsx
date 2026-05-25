@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import Header from "../../components/common/Header";
 import Footer from "../../components/common/Footer";
 import "./Checkout.css";
@@ -12,18 +13,57 @@ const Checkout = () => {
     paymentMethod: "cod",
   });
 
-  const [total] = useState(430000);
+  const [cartItems, setCartItems] = useState([]);
+  const [total, setTotal] = useState(0);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCart = async () => {
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
+      const user = userStr ? JSON.parse(userStr) : null;
+
+      if (!token || !user) {
+        navigate("/login");
+        return;
+      }
+      try {
+        const res = await axios.get("http://localhost:5000/api/cart", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCartItems(res.data);
+        const t = res.data.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        setTotal(t);
+      } catch (error) {
+        console.error("Lỗi lấy giỏ hàng:", error);
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
+      }
+    };
+    fetchCart();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Order:", formData, total);
-    alert("Đặt hàng thành công!");
-    navigate("/profile");
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      await axios.post("http://localhost:5000/api/orders", formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert("Đặt hàng thành công!");
+      navigate("/profile");
+    } catch (error) {
+      console.error("Lỗi đặt hàng:", error);
+      alert("Có lỗi xảy ra khi đặt hàng.");
+    }
   };
 
   return (
@@ -112,14 +152,12 @@ const Checkout = () => {
               <h3>Đơn hàng của bạn</h3>
 
               <div className="summary-items">
-                <div className="summary-item">
-                  <span>Harry Potter (x2)</span>
-                  <span>300,000 ₫</span>
-                </div>
-                <div className="summary-item">
-                  <span>Dế Mèn (x1)</span>
-                  <span>80,000 ₫</span>
-                </div>
+                {cartItems.map((item) => (
+                  <div key={item.id} className="summary-item">
+                    <span>{item.title} (x{item.quantity})</span>
+                    <span>{(item.price * item.quantity).toLocaleString()} ₫</span>
+                  </div>
+                ))}
               </div>
 
               <div className="summary-total">

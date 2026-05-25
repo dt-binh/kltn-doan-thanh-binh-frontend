@@ -1,11 +1,31 @@
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import Header from "../../components/common/Header";
 import Footer from "../../components/common/Footer";
-import { books, genres } from "../../data/mockData.js";
 import BookCard from "../../components/common/BookCard";
 import { Link } from "react-router-dom";
 import "./Home.css";
 
 const Home = () => {
+  const [books, setBooks] = useState([]);
+  const [genres, setGenres] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [booksRes, genresRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/books"),
+          axios.get("http://localhost:5000/api/genres"),
+        ]);
+        setBooks(booksRes.data);
+        setGenres(genresRes.data);
+      } catch (error) {
+        console.error("Lỗi lấy dữ liệu:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
   const featuredBooks = books.slice(0, 8);
 
   return (
@@ -34,9 +54,9 @@ const Home = () => {
 
             <div className="home-genre-grid">
               {genres.slice(0, 8).map((genre) => (
-                <Link key={genre} to="/books" className="home-genre-card">
+                <Link key={genre.id} to={`/books?genre=${encodeURIComponent(genre.name)}`} className="home-genre-card">
                   <div className="home-genre-icon">📚</div>
-                  <p>{genre}</p>
+                  <p>{genre.name}</p>
                 </Link>
               ))}
             </div>

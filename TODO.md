@@ -14,5 +14,5 @@
 7. (Nếu cần) Cập nhật backend để có endpoint trả về đúng cấu trúc tables mới.
 
 - [x] Đã sửa `backend/database.sql` để thêm tables `genres/authors/books/orders` phù hợp với mockData/front-end admin/user.
-
-
+- [x] Đã cập nhật `server.js` thêm các API thay thế MockData.
+- [x] Chuyển đổi các Component Frontend (Admin/User): Xóa `mockData`, thay bằng `axios` và `useEffect` để fetch dữ liệu thực.

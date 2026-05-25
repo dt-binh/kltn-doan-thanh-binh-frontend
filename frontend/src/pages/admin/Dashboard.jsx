@@ -1,14 +1,60 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import '../../pages/admin/Dashboard.css';
-import { books, orders, users } from '../../data/mockData';
 
 const Dashboard = () => {
-  const stats = {
-    users: users.length,
-    books: books.length,
-    orders: orders.length,
-    revenue: orders.reduce((sum, order) => sum + order.total, 0).toLocaleString() + ' ₫'
-  };
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    users: 0,
+    books: 0,
+    orders: 0,
+    revenue: 0
+  });
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
+      const user = userStr ? JSON.parse(userStr) : null;
+
+      if (!token || !user) {
+        navigate("/login");
+        return;
+      }
+      if (user.role !== "admin") {
+        navigate("/");
+        return;
+      }
+
+      try {
+        const [statsRes, ordersRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/admin/stats", {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get("http://localhost:5000/api/orders", {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+        setStats(statsRes.data);
+        setRecentOrders(ordersRes.data.slice(0, 5)); // Lấy 5 đơn hàng mới nhất
+      } catch (error) {
+        console.error("Lỗi lấy dữ liệu dashboard:", error);
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) return <div>Đang tải dữ liệu...</div>;
 
   return (
     <main className="admin-content">
@@ -37,7 +83,7 @@ const Dashboard = () => {
         <div className="stat-card">
           <div className="stat-icon">💰</div>
           <div className="stat-info">
-            <h3>{stats.revenue}</h3>
+            <h3>{Number(stats.revenue || 0).toLocaleString()} ₫</h3>
             <p>Doanh thu</p>
           </div>
         </div>
@@ -64,12 +110,12 @@ const Dashboard = () => {
       <div className="recent-orders">
         <h3>Đơn hàng gần đây</h3>
         <div className="orders-table">
-          {orders.slice(-5).reverse().map(order => (
+          {recentOrders.map(order => (
             <div key={order.id} className="order-row">
               <span>DH{order.id.toString().padStart(4, '0')}</span>
-              <span>{order.customer}</span>
+              <span>{order.username}</span>
               <span>{order.total.toLocaleString()} ₫</span>
-              <span className={`status ${order.status === 'Đã giao' ? 'success' : order.status === 'Đã hủy' ? 'danger' : ''}`}>
+              <span className={`status ${order.status === 'Đã giao' ? 'success' : order.status === 'Đã hủy' ? 'danger' : 'pending'}`}>
                 {order.status}
               </span>
             </div>
@@ -81,4 +127,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

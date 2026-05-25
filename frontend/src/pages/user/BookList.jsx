@@ -1,15 +1,48 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import axios from "axios";
 import Header from "../../components/common/Header";
 import Footer from "../../components/common/Footer";
-import { books, genres, authors } from "../../data/mockData.js";
 import BookCard from "../../components/common/BookCard";
 import "./BookList.css";
 
 const BookList = () => {
+  const [books, setBooks] = useState([]);
+  const [genres, setGenres] = useState([]);
+  const [authors, setAuthors] = useState([]);
+  const location = useLocation();
+
   const [search, setSearch] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("");
   const [selectedAuthor, setSelectedAuthor] = useState("");
   const [sortBy, setSortBy] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [booksRes, genresRes, authorsRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/books"),
+          axios.get("http://localhost:5000/api/genres"),
+          axios.get("http://localhost:5000/api/authors"),
+        ]);
+        setBooks(booksRes.data);
+        setGenres(genresRes.data);
+        setAuthors(authorsRes.data);
+      } catch (error) {
+        console.error("Lỗi lấy dữ liệu:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchQuery = params.get("search");
+    const genreQuery = params.get("genre");
+    
+    setSearch(searchQuery || ""); // Cập nhật từ khóa
+    setSelectedGenre(genreQuery || ""); // Cập nhật thể loại nếu có
+  }, [location.search]);
 
   const filteredBooks = useMemo(() => {
     let result = [...books];
@@ -18,16 +51,16 @@ const BookList = () => {
       result = result.filter(
         (book) =>
           book.title.toLowerCase().includes(search.toLowerCase()) ||
-          book.author.toLowerCase().includes(search.toLowerCase())
+          (book.author_name && book.author_name.toLowerCase().includes(search.toLowerCase()))
       );
     }
 
     if (selectedGenre) {
-      result = result.filter((book) => book.genre === selectedGenre);
+      result = result.filter((book) => book.genre_name === selectedGenre);
     }
 
     if (selectedAuthor) {
-      result = result.filter((book) => book.author === selectedAuthor);
+      result = result.filter((book) => book.author_name === selectedAuthor);
     }
 
     switch (sortBy) {
@@ -48,7 +81,7 @@ const BookList = () => {
     }
 
     return result;
-  }, [search, selectedGenre, selectedAuthor, sortBy]);
+  }, [books, search, selectedGenre, selectedAuthor, sortBy]);
 
   return (
     <>
@@ -79,8 +112,8 @@ const BookList = () => {
               >
                 <option value="">Tất cả thể loại</option>
                 {genres.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
+                  <option key={g.id} value={g.name}>
+                    {g.name}
                   </option>
                 ))}
               </select>
@@ -91,8 +124,8 @@ const BookList = () => {
               >
                 <option value="">Tất cả tác giả</option>
                 {authors.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
+                  <option key={a.id} value={a.name}>
+                    {a.name}
                   </option>
                 ))}
               </select>
