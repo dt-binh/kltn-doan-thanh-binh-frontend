@@ -4,7 +4,7 @@
   position: fixed;
   left: 0;
   top: 0;
-  background: #111827;
+  background: #0f2b46; /* Nền sidebar chuyển sang xanh dương đậm */
   color: white;
   padding: 20px 16px;
   display: flex;
@@ -58,14 +58,14 @@
 
 /* Hover effect */
 .nav-item:hover {
-  background: rgba(59, 130, 246, 0.25);
+  background: #1e40af; /* Màu xanh dương nhạt hơn một chút khi hover */
   color: #ffffff;
   transform: translateX(4px);
 }
 
 /* Active (nếu bạn dùng NavLink sẽ hoạt động) */
 .nav-item.active {
-  background: rgba(59, 130, 246, 0.45);
+  background: #3b82f6; /* Xanh dương sáng cho mục đang được chọn */
   color: white;
 }
 

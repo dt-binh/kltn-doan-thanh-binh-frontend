@@ -51,7 +51,7 @@
 
   border: none;
 
-  background: orange;
+  background: #ff4d6d;
   color: white;
 
   border-radius: 0 6px 6px 0;
@@ -88,7 +88,7 @@
 }
 
 .header-nav-menu a:hover {
-  color: orange;
+  color: #ff4d6d;
 }
 
 /* ================= CART ================= */
@@ -118,7 +118,7 @@
 }
 
 .header-user:hover {
-  color: orange;
+  color: #ff4d6d;
 }
 
 .user-icon {
@@ -179,7 +179,7 @@
 
 .dropdown-link:hover {
   background: #f3f4f6;
-  color: orange !important;
+  color: #ff4d6d !important;
 }
 
 /* ================= LOGOUT ================= */
@@ -190,7 +190,7 @@
   border: none;
   border-radius: 6px;
 
-  background: crimson;
+  background: #ff4d6d;
   color: white;
 
   cursor: pointer;
