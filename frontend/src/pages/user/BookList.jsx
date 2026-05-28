@@ -1,15 +1,18 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
+
 import Header from "../../components/common/Header";
 import Footer from "../../components/common/Footer";
 import BookCard from "../../components/common/BookCard";
+
 import "./BookList.css";
 
 const BookList = () => {
   const [books, setBooks] = useState([]);
   const [genres, setGenres] = useState([]);
   const [authors, setAuthors] = useState([]);
+
   const location = useLocation();
 
   const [search, setSearch] = useState("");
@@ -25,23 +28,28 @@ const BookList = () => {
           axios.get("http://localhost:5000/api/genres"),
           axios.get("http://localhost:5000/api/authors"),
         ]);
+
         setBooks(booksRes.data);
         setGenres(genresRes.data);
         setAuthors(authorsRes.data);
+
       } catch (error) {
         console.error("Lỗi lấy dữ liệu:", error);
       }
     };
+
     fetchData();
   }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
+
     const searchQuery = params.get("search");
     const genreQuery = params.get("genre");
-    
-    setSearch(searchQuery || ""); // Cập nhật từ khóa
-    setSelectedGenre(genreQuery || ""); // Cập nhật thể loại nếu có
+
+    setSearch(searchQuery || "");
+    setSelectedGenre(genreQuery || "");
+
   }, [location.search]);
 
   const filteredBooks = useMemo(() => {
@@ -50,54 +58,87 @@ const BookList = () => {
     if (search) {
       result = result.filter(
         (book) =>
-          book.title.toLowerCase().includes(search.toLowerCase()) ||
-          (book.author_name && book.author_name.toLowerCase().includes(search.toLowerCase()))
+          book.title
+            .toLowerCase()
+            .includes(search.toLowerCase()) ||
+
+          (book.author_name &&
+            book.author_name
+              .toLowerCase()
+              .includes(search.toLowerCase()))
       );
     }
 
     if (selectedGenre) {
-      result = result.filter((book) => book.genre_name === selectedGenre);
+      result = result.filter(
+        (book) => book.genre_name === selectedGenre
+      );
     }
 
     if (selectedAuthor) {
-      result = result.filter((book) => book.author_name === selectedAuthor);
+      result = result.filter(
+        (book) => book.author_name === selectedAuthor
+      );
     }
 
     switch (sortBy) {
+
       case "newest":
         result.sort((a, b) => b.id - a.id);
         break;
+
       case "bestseller":
         result.sort((a, b) => b.rating - a.rating);
         break;
+
       case "price-low":
         result.sort((a, b) => a.price - b.price);
         break;
+
       case "price-high":
         result.sort((a, b) => b.price - a.price);
         break;
+
       default:
         break;
     }
 
     return result;
-  }, [books, search, selectedGenre, selectedAuthor, sortBy]);
+
+  }, [
+    books,
+    search,
+    selectedGenre,
+    selectedAuthor,
+    sortBy,
+  ]);
 
   return (
     <>
       <Header />
 
       <main>
-        <div className="hero-small">
-          <div className="booklist-container">
-            <h1>Danh sách truyện</h1>
-            <p className="hero-desc">Khám phá tất cả truyện trong cửa hàng</p>
-          </div>
-        </div>
 
-        <section className="filters-section">
+        {/* HERO */}
+        <section className="hero-small">
+
           <div className="booklist-container">
+
+            {/* LEFT */}
+            <div className="hero-content">
+
+              <h1>Danh sách truyện</h1>
+
+              <p className="hero-desc">
+                Khám phá tất cả truyện trong cửa hàng
+              </p>
+
+            </div>
+
+            {/* FILTERS */}
             <div className="filters">
+
+              {/* SEARCH */}
               <input
                 type="text"
                 placeholder="Tìm kiếm truyện, tác giả..."
@@ -106,60 +147,159 @@ const BookList = () => {
                 className="search-input"
               />
 
-              <select
-                value={selectedGenre}
-                onChange={(e) => setSelectedGenre(e.target.value)}
-              >
-                <option value="">Tất cả thể loại</option>
-                {genres.map((g) => (
-                  <option key={g.id} value={g.name}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
+              {/* GENRE */}
+              <div className="dropdown">
 
-              <select
-                value={selectedAuthor}
-                onChange={(e) => setSelectedAuthor(e.target.value)}
-              >
-                <option value="">Tất cả tác giả</option>
-                {authors.map((a) => (
-                  <option key={a.id} value={a.name}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
+                <div className="dropdown-btn">
+                  {selectedGenre || "Tất cả thể loại"}
+                </div>
 
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                <option value="">Sắp xếp</option>
-                <option value="newest">Mới nhất</option>
-                <option value="bestseller">Bán chạy</option>
-                <option value="price-low">Giá thấp → cao</option>
-                <option value="price-high">Giá cao → thấp</option>
-              </select>
+                <div className="dropdown-menu">
+
+                  <div className="dropdown-content">
+
+                    <div
+                      onClick={() => setSelectedGenre("")}
+                    >
+                      Tất cả thể loại
+                    </div>
+
+                    {genres.map((g) => (
+                      <div
+                        key={g.id}
+                        onClick={() => setSelectedGenre(g.name)}
+                      >
+                        {g.name}
+                      </div>
+                    ))}
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* AUTHOR */}
+              <div className="dropdown">
+
+                <div className="dropdown-btn">
+                  {selectedAuthor || "Tất cả tác giả"}
+                </div>
+
+                <div className="dropdown-menu">
+
+                  <div className="dropdown-content">
+
+                    <div
+                      onClick={() => setSelectedAuthor("")}
+                    >
+                      Tất cả tác giả
+                    </div>
+
+                    {authors.map((a) => (
+                      <div
+                        key={a.id}
+                        onClick={() => setSelectedAuthor(a.name)}
+                      >
+                        {a.name}
+                      </div>
+                    ))}
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* SORT */}
+              <div className="dropdown">
+
+                <div className="dropdown-btn">
+
+                  {sortBy === ""
+                    ? "Sắp xếp"
+                    : sortBy === "newest"
+                    ? "Mới nhất"
+                    : sortBy === "bestseller"
+                    ? "Bán chạy"
+                    : sortBy === "price-low"
+                    ? "Giá thấp → cao"
+                    : "Giá cao → thấp"}
+
+                </div>
+
+                <div className="dropdown-menu">
+
+                  <div className="dropdown-content">
+
+                    <div
+                      onClick={() => setSortBy("")}
+                    >
+                      Sắp xếp
+                    </div>
+
+                    <div
+                      onClick={() => setSortBy("newest")}
+                    >
+                      Mới nhất
+                    </div>
+
+                    <div
+                      onClick={() => setSortBy("bestseller")}
+                    >
+                      Bán chạy
+                    </div>
+
+                    <div
+                      onClick={() => setSortBy("price-low")}
+                    >
+                      Giá thấp → cao
+                    </div>
+
+                    <div
+                      onClick={() => setSortBy("price-high")}
+                    >
+                      Giá cao → thấp
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
             </div>
+
           </div>
+
         </section>
 
+        {/* BOOK LIST */}
         <section className="books-list">
+
           <div className="booklist-container">
+
             <div className="books-grid">
+
               {filteredBooks.map((book) => (
-                <BookCard key={book.id} book={book} />
+                <BookCard
+                  key={book.id}
+                  book={book}
+                />
               ))}
+
             </div>
 
             {filteredBooks.length === 0 && (
-              <div className="no-results">Không tìm thấy truyện phù hợp</div>
+              <div className="no-results">
+                Không tìm thấy truyện phù hợp
+              </div>
             )}
 
-            <div className="pagination">
-              <button>Trước</button>
-              <span>1 / 3</span>
-              <button>Sau</button>
-            </div>
           </div>
+
         </section>
+
       </main>
 
       <Footer />

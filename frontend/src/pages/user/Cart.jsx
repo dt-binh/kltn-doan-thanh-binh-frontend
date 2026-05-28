@@ -141,7 +141,7 @@ const Cart = () => {
                 </div>
 
                 <Link to="/checkout" className="checkout-btn">
-                  Tiến hành thanh toán
+                   Thanh toán
                 </Link>
               </div>
             </div>
