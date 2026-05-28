@@ -49,6 +49,10 @@
   transition: 0.2s;
 }
 
+.clickable-row {
+  cursor: pointer;
+}
+
 /* Status cell center */
 .status-cell {
   text-align: center;

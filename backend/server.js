@@ -675,6 +675,39 @@ app.post("/api/orders", verifyToken, (req, res) => {
   });
 });
 
+// ================= GET ORDERS BY USER ID (ADMIN) =================
+app.get("/api/admin/users/:userId/orders", verifyToken, (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
+  }
+
+  const { userId } = req.params;
+
+  // Lấy tên người dùng trước
+  const userSql = "SELECT username FROM users WHERE id = ?";
+  db.query(userSql, [userId], (userErr, userResult) => {
+    if (userErr) return res.status(500).json(userErr);
+    if (userResult.length === 0) return res.status(404).json({ message: "Không tìm thấy người dùng" });
+
+    const username = userResult[0].username;
+
+    // Sau đó lấy tất cả đơn hàng của người dùng đó
+    const ordersSql = `
+        SELECT * 
+        FROM orders
+        WHERE user_id = ?
+        ORDER BY order_date DESC
+    `;
+
+    db.query(ordersSql, [userId], (ordersErr, orders) => {
+      if (ordersErr) return res.status(500).json(ordersErr);
+      
+      // Trả về cả tên người dùng và danh sách đơn hàng
+      res.json({ username, orders });
+    });
+  });
+});
+
 
 // ================= GET ORDER DETAILS =================
 app.get("/api/orders/:id", verifyToken, (req, res) => {

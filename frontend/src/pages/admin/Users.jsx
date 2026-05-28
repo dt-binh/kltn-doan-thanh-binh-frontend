@@ -72,7 +72,11 @@ const Users = () => {
 
           <tbody>
             {users.map((user) => (
-              <tr key={user.id}>
+              <tr 
+                key={user.id} 
+                className="clickable-row"
+                onClick={() => navigate(`/admin/users/${user.id}/orders`)}
+              >
                 <td>{user.id}</td>
                 <td>{user.username}</td>
                 <td>{user.email}</td>
@@ -100,7 +104,10 @@ const Users = () => {
                       className={
                         user.status === "active" ? "btn-lock" : "btn-unlock"
                       }
-                      onClick={() => toggleStatus(user.id, user.status)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleStatus(user.id, user.status);
+                      }}
                     >
                       {user.status === "active" ? "🔒 Khóa" : "🔓 Mở"}
                     </button>

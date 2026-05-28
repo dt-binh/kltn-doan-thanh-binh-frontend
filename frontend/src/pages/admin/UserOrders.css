@@ -1,0 +1,120 @@
+.user-orders-page {
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.user-orders-page .page-header {
+    margin-bottom: 25px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 15px;
+}
+
+.user-orders-page .page-header h1 {
+    font-size: 24px;
+    margin: 10px 0 5px 0;
+}
+
+.user-orders-page .page-header p {
+    color: #6b7280;
+    margin: 0;
+}
+
+.back-link {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+    margin-bottom: 10px;
+    display: inline-block;
+}
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.no-orders-msg {
+    text-align: center;
+    margin-top: 40px;
+    color: #6b7280;
+    font-size: 16px;
+}
+
+.orders-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.order-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.order-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    cursor: pointer;
+    background-color: #f9fafb;
+    transition: background-color 0.2s;
+}
+
+.order-summary:hover {
+    background-color: #f3f4f6;
+}
+
+.order-info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.order-id, .order-date, .order-total, .order-status {
+    font-size: 14px;
+    color: #374151;
+}
+
+.order-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    color: white;
+    text-align: center;
+    min-width: 90px;
+}
+
+.status-đang-xử-lí { background-color: #f59e0b; }
+.status-đã-giao { background-color: #10b981; }
+.status-đã-hủy { background-color: #ef4444; }
+
+.details-toggle-btn {
+    background: none;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.order-details {
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.order-details h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.order-items-list { display: flex; flex-direction: column; gap: 15px; }
+.order-item { display: flex; align-items: center; gap: 15px; }
+.item-image { width: 60px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; }
+.item-info { flex-grow: 1; }
+.item-title { font-weight: 600; margin: 0 0 5px 0; }
+.item-qty-price { font-size: 13px; color: #6b7280; margin: 0; }
+.item-subtotal { font-weight: 600; font-size: 15px; }

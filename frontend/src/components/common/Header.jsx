@@ -106,13 +106,6 @@ const Header = () => {
                       to="/profile"
                       className="dropdown-link"
                     >
-                      Trang cá nhân
-                    </Link>
-
-                    <Link
-                      to="/profile"
-                      className="dropdown-link"
-                    >
                       Đơn hàng
                     </Link>
 

@@ -14,6 +14,7 @@ import BooksPage from "./pages/admin/Books"
 import Genres from "./pages/admin/Genres"
 import Authors from "./pages/admin/Authors"
 import Orders from "./pages/admin/Orders"
+import UserOrders from "./pages/admin/UserOrders"
 import "./App.css"
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="users" element={<Users />} />
+            <Route path="users/:userId/orders" element={<UserOrders />} />
             <Route path="books" element={<BooksPage />} />
             <Route path="genres" element={<Genres />} />
             <Route path="authors" element={<Authors />} />
