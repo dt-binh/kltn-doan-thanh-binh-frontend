@@ -311,15 +311,28 @@ app.get(
   "/api/profile",
   verifyToken,
   (req, res) => {
-    res.json({
-      message:
-        "Lấy profile thành công",
-
-      user: req.user,
+    const sql = "SELECT id, username, email, role, status, phone, address FROM users WHERE id = ?";
+    db.query(sql, [req.user.id], (err, result) => {
+      if (err) return res.status(500).json(err);
+      if (result.length === 0) return res.status(404).json({ message: "Không tìm thấy người dùng" });
+      
+      res.json({
+        message: "Lấy profile thành công",
+        user: result[0],
+      });
     });
   }
 );
 
+// ================= UPDATE PROFILE =================
+app.put("/api/profile", verifyToken, (req, res) => {
+  const { name, phone, address } = req.body;
+  const sql = "UPDATE users SET username = ?, phone = ?, address = ? WHERE id = ?";
+  db.query(sql, [name, phone, address, req.user.id], (err) => {
+    if (err) return res.status(500).json(err);
+    res.json({ message: "Cập nhật profile thành công" });
+  });
+});
 
 // ================= GET ADMIN STATS =================
 app.get("/api/admin/stats", verifyToken, async (req, res) => {
@@ -622,8 +635,9 @@ app.get("/api/orders", verifyToken, (req, res) => {
 
 // ================= CREATE ORDER (CHECKOUT) =================
 app.post("/api/orders", verifyToken, (req, res) => {
+  const { payment_method = 'cod' } = req.body;
   const user_id = req.user.id;
-  const status = 'Đang xử lí';
+  const status = payment_method === 'qr' ? 'Chờ thanh toán' : 'Đang xử lí';
   const order_date = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
 
   // 1. Lấy thông tin giỏ hàng của user kèm giá sách
@@ -647,8 +661,8 @@ app.post("/api/orders", verifyToken, (req, res) => {
     });
 
     // 3. Tạo đơn hàng mới
-    const insertOrderSql = "INSERT INTO orders (user_id, total, status, order_date) VALUES (?, ?, ?, ?)";
-    db.query(insertOrderSql, [user_id, total, status, order_date], (err, orderResult) => {
+    const insertOrderSql = "INSERT INTO orders (user_id, total, status, order_date, payment_method) VALUES (?, ?, ?, ?, ?)";
+    db.query(insertOrderSql, [user_id, total, status, order_date, payment_method], (err, orderResult) => {
       if (err) return res.status(500).json(err);
 
       const order_id = orderResult.insertId;
@@ -673,6 +687,45 @@ app.post("/api/orders", verifyToken, (req, res) => {
       });
     });
   });
+});
+
+// ================= SEPAY WEBHOOK (AUTO CONFIRM PAYMENT) =================
+app.post("/api/webhook/sepay", (req, res) => {
+  // Dữ liệu mẫu từ SePay (Gateway có thể là MBBank, Vietcombank...)
+  const { transferType, transferAmount, content } = req.body;
+
+  // Chỉ xử lý giao dịch tiền vào (Nhận tiền)
+  if (transferType === "in") {
+    // Tìm mã đơn hàng trong nội dung chuyển khoản (Ví dụ: khách ghi "DH0012")
+    // Regex tìm chữ DH theo sau là các chữ số
+    const match = content.match(/DH(\d+)/i);
+    
+    if (match) {
+      const orderId = parseInt(match[1], 10);
+
+      // Kiểm tra đơn hàng trong Database
+      const checkOrderSql = "SELECT * FROM orders WHERE id = ?";
+      db.query(checkOrderSql, [orderId], (err, results) => {
+        if (!err && results.length > 0) {
+          const order = results[0];
+          
+          // Kiểm tra xem đơn hàng có ở trạng thái "Chờ thanh toán" và số tiền gửi có đủ không
+          if (order.status === 'Chờ thanh toán' && transferAmount >= order.total) {
+            // Cập nhật trạng thái thành "Đang xử lí"
+            const updateSql = "UPDATE orders SET status = 'Đang xử lí' WHERE id = ?";
+            db.query(updateSql, [orderId], (updateErr) => {
+              if (!updateErr) {
+                console.log(`✅ [Webhook] Đã tự động xác nhận đơn hàng DH${orderId.toString().padStart(4, "0")}`);
+              }
+            });
+          }
+        }
+      });
+    }
+  }
+
+  // Luôn trả về 200 OK cho SePay
+  res.status(200).json({ success: true });
 });
 
 // ================= GET ORDERS BY USER ID (ADMIN) =================
@@ -716,7 +769,7 @@ app.get("/api/orders/:id", verifyToken, (req, res) => {
   const role = req.user.role;
 
   // Check quyền: chỉ có Admin và chủ sở hữu của Order mới được xem chi tiết
-  let checkSql = "SELECT user_id FROM orders WHERE id = ?";
+  let checkSql = "SELECT * FROM orders WHERE id = ?";
   db.query(checkSql, [id], (err, result) => {
     if (err) return res.status(500).json(err);
     if (result.length === 0) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
@@ -745,26 +798,82 @@ app.get("/api/orders/:id", verifyToken, (req, res) => {
 
 // ================= UPDATE ORDER STATUS =================
 app.put("/api/orders/:id/status", verifyToken, (req, res) => {
-  if (req.user.role !== "admin") {
-    return res.status(403).json({ message: "Chỉ admin mới có quyền cập nhật trạng thái đơn hàng" });
-  }
-
   const { id } = req.params;
   const { status } = req.body;
+  const userId = req.user.id;
+  const role = req.user.role;
 
   if (!status) {
     return res.status(400).json({ message: "Vui lòng cung cấp trạng thái mới" });
   }
 
-  const sql = "UPDATE orders SET status = ? WHERE id = ?";
-  db.query(sql, [status, id], (err, result) => {
+  // Lấy thông tin đơn hàng để kiểm tra quyền
+  db.query("SELECT * FROM orders WHERE id = ?", [id], (err, results) => {
     if (err) return res.status(500).json(err);
-    
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    if (results.length === 0) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+
+    const order = results[0];
+
+    if (order.status === 'Đã hủy') {
+      return res.status(400).json({ message: "Không thể cập nhật đơn hàng đã bị hủy" });
     }
 
-    res.json({ message: "Cập nhật trạng thái đơn hàng thành công" });
+    if (order.status === 'Đang giao' && status === 'Đã hủy') {
+      return res.status(400).json({ message: "Không thể hủy đơn hàng đang giao" });
+    }
+
+    // Nếu không phải admin, kiểm tra các điều kiện để user tự hủy đơn
+    if (role !== "admin") {
+      if (order.user_id !== userId) {
+        return res.status(403).json({ message: "Bạn không có quyền cập nhật đơn hàng này" });
+      }
+      if (status !== 'Đã hủy') {
+        return res.status(403).json({ message: "Người dùng chỉ có quyền hủy đơn hàng" });
+      }
+      const canCancelCod = order.payment_method === 'cod' && order.status === 'Đang xử lí';
+      const canCancelQr = order.payment_method === 'qr' && order.status === 'Chờ thanh toán';
+      if (!canCancelCod && !canCancelQr) {
+        return res.status(400).json({ message: "Không thể hủy đơn hàng ở trạng thái hiện tại" });
+      }
+    }
+
+    const sql = "UPDATE orders SET status = ? WHERE id = ?";
+    db.query(sql, [status, id], (updateErr, result) => {
+      if (updateErr) return res.status(500).json(updateErr);
+      res.json({ message: "Cập nhật trạng thái đơn hàng thành công" });
+    });
+  });
+});
+
+// ================= CANCEL QR CHECKOUT & RESTORE CART =================
+app.post("/api/orders/:id/cancel-checkout", verifyToken, (req, res) => {
+  const { id } = req.params;
+  const user_id = req.user.id;
+
+  db.query("SELECT * FROM orders WHERE id = ? AND user_id = ? AND status = 'Chờ thanh toán'", [id, user_id], (err, results) => {
+    if (err) return res.status(500).json(err);
+    if (results.length === 0) return res.status(404).json({ message: "Không tìm thấy đơn hàng hợp lệ để hủy" });
+
+    db.query("SELECT book_id, quantity FROM order_items WHERE order_id = ?", [id], (err, items) => {
+      if (err) return res.status(500).json(err);
+      
+      if (items.length > 0) {
+        const cartValues = items.map(item => [user_id, item.book_id, item.quantity]);
+        db.query("INSERT INTO cart_items (user_id, book_id, quantity) VALUES ?", [cartValues], (err) => {
+          if (err) return res.status(500).json(err);
+          
+          db.query("DELETE FROM order_items WHERE order_id = ?", [id], (err) => {
+            db.query("DELETE FROM orders WHERE id = ?", [id], (err) => {
+              res.json({ message: "Đã hủy giao dịch và khôi phục giỏ hàng" });
+            });
+          });
+        });
+      } else {
+        db.query("DELETE FROM orders WHERE id = ?", [id], () => {
+          res.json({ message: "Đã hủy giao dịch" });
+        });
+      }
+    });
   });
 });
 

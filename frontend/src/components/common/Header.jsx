@@ -106,7 +106,7 @@ const Header = () => {
                       to="/profile"
                       className="dropdown-link"
                     >
-                      Đơn hàng
+                      Trang cá nhân
                     </Link>
 
                     {user.role === "admin" && (

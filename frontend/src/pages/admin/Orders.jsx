@@ -46,6 +46,7 @@ const Orders = () => {
       fetchOrders();
     } catch (error) {
       console.error("Lỗi cập nhật trạng thái", error);
+      alert(error.response?.data?.message || "Lỗi cập nhật trạng thái");
     }
   };
 
@@ -59,6 +60,7 @@ const Orders = () => {
               <th>ID Đơn</th>
               <th>Khách hàng</th>
               <th>Tổng tiền</th>
+              <th>Phương thức TT</th>
               <th>Trạng thái</th>
               <th>Ngày đặt</th>
             </tr>
@@ -70,16 +72,27 @@ const Orders = () => {
                 <td>{order.username}</td>
                 <td>{order.total.toLocaleString()} ₫</td>
                 <td>
+                  {order.payment_method === 'qr' ? (
+                    <span className={`status ${order.status !== 'Chờ thanh toán' ? 'success' : 'pending'}`}>
+                      {order.status !== 'Chờ thanh toán' ? 'Đã thanh toán QR' : 'QR (Chờ TT)'}
+                    </span>
+                  ) : (
+                    <span style={{ fontWeight: '500', color: '#4b5563' }}>Tiền mặt</span>
+                  )}
+                </td>
+                <td>
                   <select 
                     value={order.status} 
                     onChange={(e) => handleStatusChange(order.id, e.target.value)}
                     className={`status ${order.status === 'Đã giao' ? 'success' : order.status === 'Đã hủy' ? 'danger' : 'pending'}`}
                     style={{ border: 'none', outline: 'none', background: 'transparent' }}
+                    disabled={order.status === 'Đã hủy'}
                   >
+                    {order.status === 'Chờ thanh toán' && <option value="Chờ thanh toán">Chờ thanh toán</option>}
                     <option value="Đang xử lí">Đang xử lí</option>
                     <option value="Đang giao">Đang giao</option>
                     <option value="Đã giao">Đã giao</option>
-                    <option value="Đã hủy">Đã hủy</option>
+                    {order.status !== 'Đang giao' && <option value="Đã hủy">Đã hủy</option>}
                   </select>
                 </td>
                 <td>{new Date(order.order_date).toLocaleDateString("vi-VN")}</td>
