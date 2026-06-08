@@ -9,6 +9,7 @@ import "./Home.css";
 const Home = () => {
   const [books, setBooks] = useState([]);
   const [genres, setGenres] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,7 +27,12 @@ const Home = () => {
     fetchData();
   }, []);
 
-  const featuredBooks = books.slice(0, 8);
+  // Phân trang danh sách truyện
+  const itemsPerPage = 8;
+  const totalPages = Math.ceil(books.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBooks = books.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="home-page">
@@ -73,10 +79,49 @@ const Home = () => {
             </div>
 
             <div className="home-books-grid">
-              {featuredBooks.map((book) => (
+              {currentBooks.map((book) => (
                 <BookCard key={book.id} book={book} />
               ))}
             </div>
+
+            {/* Phân trang */}
+            {totalPages > 1 && (
+              <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "40px" }}>
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  style={{ padding: "8px 16px", cursor: currentPage === 1 ? "not-allowed" : "pointer", borderRadius: "6px", border: "1px solid #d1d5db", backgroundColor: "#f9fafb", color: "#374151", fontWeight: "500" }}
+                >
+                  &laquo; Trước
+                </button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    style={{
+                      padding: "8px 16px",
+                      cursor: "pointer",
+                      backgroundColor: currentPage === page ? "#3b82f6" : "#fff",
+                      color: currentPage === page ? "#fff" : "#374151",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontWeight: "500"
+                    }}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  style={{ padding: "8px 16px", cursor: currentPage === totalPages ? "not-allowed" : "pointer", borderRadius: "6px", border: "1px solid #d1d5db", backgroundColor: "#f9fafb", color: "#374151", fontWeight: "500" }}
+                >
+                  Sau &raquo;
+                </button>
+              </div>
+            )}
           </div>
         </section>
       </main>

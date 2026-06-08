@@ -1,157 +1,61 @@
 .genres-page {
-  font-family: "Segoe UI", sans-serif;
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .genres-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 25px;
 }
 
 .genres-header h2 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 800;
-  color: #111827;
+  color: #0f172a;
+  font-weight: 700;
 }
 
-/* ADD BUTTON */
 .genres-btn-add {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
   border: none;
-  padding: 10px 16px;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 800;
+  padding: 10px 20px;
+  border-radius: 8px;
   cursor: pointer;
-  background: rgba(59, 130, 246, 0.15);
-  color: #2563eb;
-  transition: 0.25s;
-}
-
-.genres-btn-add:hover {
-  background: rgba(59, 130, 246, 0.25);
-}
-
-/* TABLE CONTAINER */
-.genres-table-container {
-  width: 100%;
-  overflow-x: auto;
-  background: #ffffff;
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
-  padding: 12px;
-}
-
-/* TABLE */
-.genres-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 850px;
-}
-
-.genres-table th {
-  text-align: center;
-  padding: 14px 12px;
-  background: #f9fafb;
-  font-size: 14px;
-  font-weight: 800;
-  color: #111827;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.genres-table td {
-  padding: 14px 12px;
-  font-size: 14px;
   font-weight: 600;
-  color: #374151;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: center;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+  transition: all 0.2s ease;
+}
+.genres-btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 10px -1px rgba(79, 70, 229, 0.4); }
+
+.genres-table-container { overflow-x: auto; }
+.genres-table { width: 100%; border-collapse: collapse; }
+
+.genres-table th, .genres-table td {
+  padding: 15px;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+  color: #334155;
 }
 
-.genres-table tr:hover td {
-  background: #f3f4f6;
-  transition: 0.2s;
-}
-
-/* INPUT */
+.genres-table th { background-color: #f8fafc; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; }
 .genres-table input {
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid #d1d5db;
-  outline: none;
-  font-size: 14px;
+  width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; transition: all 0.2s ease;
 }
+.genres-table input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
+.add-row { background-color: #f0fdf4; }
+.action-cell { display: flex; gap: 8px; }
 
-.genres-table input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+/* Buttons */
+.btn-edit, .btn-save {
+  background-color: #eff6ff; color: #2563eb; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background-color 0.2s;
 }
-
-/* ACTION CELL */
-.action-cell {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
+.btn-delete, .btn-cancel {
+  background-color: #fef2f2; color: #dc2626; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background-color 0.2s;
 }
-
-/* BUTTON COMMON */
-.btn-save,
-.btn-cancel,
-.btn-edit,
-.btn-delete {
-  border: none;
-  padding: 8px 14px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: 0.25s;
-}
-
-/* SAVE */
-.btn-save {
-  background: rgba(34, 197, 94, 0.15);
-  color: #16a34a;
-}
-
-.btn-save:hover {
-  background: rgba(34, 197, 94, 0.25);
-}
-
-/* CANCEL */
-.btn-cancel {
-  background: rgba(107, 114, 128, 0.15);
-  color: #374151;
-}
-
-.btn-cancel:hover {
-  background: rgba(107, 114, 128, 0.25);
-}
-
-/* EDIT */
-.btn-edit {
-  background: rgba(59, 130, 246, 0.15);
-  color: #2563eb;
-}
-
-.btn-edit:hover {
-  background: rgba(59, 130, 246, 0.25);
-}
-
-/* DELETE */
-.btn-delete {
-  background: rgba(239, 68, 68, 0.15);
-  color: #dc2626;
-}
-
-.btn-delete:hover {
-  background: rgba(239, 68, 68, 0.25);
-}
-
-/* ADD ROW */
-.add-row td {
-  background: rgba(59, 130, 246, 0.05);
-}
+.btn-edit:hover, .btn-save:hover { background-color: #c7d2fe; }
+.btn-delete:hover, .btn-cancel:hover { background-color: #fecaca; }

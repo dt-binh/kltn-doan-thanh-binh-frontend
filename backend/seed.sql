@@ -35,7 +35,9 @@ INSERT INTO users (
     email,
     password,
     role,
-    status
+    status,
+    phone,
+    address
 )
 VALUES
 (
@@ -43,14 +45,18 @@ VALUES
     'admin@gmail.com',
     '$2b$10$3euPcmQFCiblsZeEu5s7p.9Jx4Q1UQK4q0vB9xvG5LhX5gYyJw8U2',
     'admin',
-    'active'
+    'active',
+    '0987654321',
+    'Hà Nội'
 ),
 (
     'beeuser',
     'user@gmail.com',
     '$2b$10$3euPcmQFCiblsZeEu5s7p.9Jx4Q1UQK4q0vB9xvG5LhX5gYyJw8U2',
     'user',
-    'active'
+    'active',
+    '0123456789',
+    'Hồ Chí Minh'
 );
 
 -- =========================================================
@@ -151,12 +157,13 @@ INSERT INTO orders (
     user_id,
     total,
     status,
-    order_date
+    order_date,
+    payment_method
 )
 VALUES
-(2, 300000, 'Đã giao', '2024-10-01'),
-(2, 150000, 'Đang xử lí', '2024-10-02'),
-(2, 500000, 'Đã hủy', '2024-10-03');
+(2, 300000, 'Đã giao', '2024-10-01', 'cod'),
+(2, 150000, 'Đang xử lí', '2024-10-02', 'qr'),
+(2, 500000, 'Đã hủy', '2024-10-03', 'cod');
 
 -- =========================================================
 -- SAMPLE ORDER ITEMS
@@ -172,3 +179,11 @@ VALUES
 (1, 2, 1, 80000),
 (2, 3, 1, 120000),
 (3, 4, 2, 250000);
+
+-- =========================================================
+-- SAMPLE REVIEWS
+-- =========================================================
+INSERT INTO reviews (book_id, user_id, rating, comment) VALUES 
+(1, 2, 5, 'Truyện rất hay, rất đáng đọc!'),
+(2, 2, 4, 'Bìa đẹp, nội dung hấp dẫn.'),
+(3, 2, 5, 'Tuyệt vời, sẽ giới thiệu cho bạn bè!');

@@ -28,6 +28,10 @@ CREATE TABLE users (
     status ENUM('active', 'inactive')
     DEFAULT 'active',
 
+    phone VARCHAR(20) DEFAULT NULL,
+
+    address TEXT DEFAULT NULL,
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -126,8 +130,26 @@ CREATE TABLE orders (
 
     order_date DATE NOT NULL,
 
+    payment_method VARCHAR(50) DEFAULT 'cod',
+
     FOREIGN KEY (user_id)
     REFERENCES users(id)
+    ON DELETE CASCADE
+);
+
+-- =========================================================
+-- REVIEWS
+-- =========================================================
+CREATE TABLE reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    book_id INT NOT NULL,
+    user_id INT NOT NULL,
+    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (book_id) REFERENCES books(id)
+    ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id)
     ON DELETE CASCADE
 );
 

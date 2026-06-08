@@ -15,6 +15,19 @@ const Profile = () => {
     address: "",
   });
   const [orders, setOrders] = useState([]);
+  const [expandedOrder, setExpandedOrder] = useState(null);
+  const [orderDetails, setOrderDetails] = useState([]);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
+  // Phân trang đơn hàng
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 5;
+
+  // Lọc danh sách đơn hàng theo trang hiện tại
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(orders.length / ordersPerPage);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,7 +61,9 @@ const Profile = () => {
       } catch (error) {
         console.error("Lỗi lấy thông tin:", error);
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+          alert("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
           localStorage.removeItem("token");
+          localStorage.removeItem("user");
           navigate("/login");
         }
       }
@@ -67,7 +82,14 @@ const Profile = () => {
       alert("Cập nhật thành công!");
       setEditMode(false);
     } catch (error) {
-      alert("Lỗi khi cập nhật thông tin");
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        alert("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+      } else {
+        alert("Lỗi khi cập nhật thông tin");
+      }
     }
   };
 
@@ -86,7 +108,44 @@ const Profile = () => {
       });
       setOrders(ordersRes.data);
     } catch (error) {
-      alert(error.response?.data?.message || "Lỗi khi hủy đơn hàng");
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        alert("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+      } else {
+        alert(error.response?.data?.message || "Lỗi khi hủy đơn hàng");
+      }
+    }
+  };
+
+  const handleToggleOrderDetails = async (orderId) => {
+    if (expandedOrder === orderId) {
+      setExpandedOrder(null);
+      return;
+    }
+
+    setDetailsLoading(true);
+    setExpandedOrder(orderId);
+    const token = localStorage.getItem("token");
+    try {
+      const res = await axios.get(`http://localhost:5000/api/orders/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOrderDetails(res.data.items);
+    } catch (err) {
+      if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+        alert("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+      } else {
+        console.error("Lỗi lấy chi tiết đơn hàng:", err);
+        alert("Không thể tải chi tiết đơn hàng.");
+        setExpandedOrder(null);
+      }
+    } finally {
+      setDetailsLoading(false);
     }
   };
 
@@ -186,7 +245,7 @@ const Profile = () => {
               <h2>Lịch sử đơn hàng</h2>
 
               <div className="orders-table">
-                <div className="table-header" style={{ gridTemplateColumns: "0.8fr 1fr 1fr 1.5fr 1.2fr 1fr" }}>
+                <div className="table-header" style={{ gridTemplateColumns: "0.8fr 1fr 1fr 1.5fr 1.2fr 1.5fr" }}>
                   <span>Mã đơn</span>
                   <span>Ngày đặt</span>
                   <span>Tổng tiền</span>
@@ -195,8 +254,9 @@ const Profile = () => {
                   <span>Thao tác</span>
                 </div>
 
-                {orders.map((order) => (
-                  <div key={order.id} className="table-row" style={{ gridTemplateColumns: "0.8fr 1fr 1fr 1.5fr 1.2fr 1fr", alignItems: "center" }}>
+                {currentOrders.map((order) => (
+                  <React.Fragment key={order.id}>
+                    <div className="table-row" style={{ gridTemplateColumns: "0.8fr 1fr 1fr 1.5fr 1.2fr 1.5fr", alignItems: "center" }}>
                     <span>DH{order.id.toString().padStart(4, "0")}</span>
                     <span>{new Date(order.order_date).toLocaleDateString("vi-VN")}</span>
                     <span>{order.total.toLocaleString()} ₫</span>
@@ -210,19 +270,88 @@ const Profile = () => {
                     >
                       {order.status}
                     </span>
-                    <span>
-                    {((order.payment_method === 'cod' && order.status === 'Đang xử lí') || (order.payment_method === 'qr' && order.status === 'Chờ thanh toán')) && (
+                      <span style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+                        {((order.payment_method === 'cod' && order.status === 'Đang xử lí') || (order.payment_method === 'qr' && order.status === 'Chờ thanh toán')) && (
+                          <button
+                            onClick={() => handleCancelOrder(order.id)}
+                            style={{ background: "#ef4444", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "13px" }}
+                          >
+                            Hủy
+                          </button>
+                        )}
                         <button
-                          onClick={() => handleCancelOrder(order.id)}
-                          style={{ background: "#ef4444", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "13px" }}
+                          onClick={() => handleToggleOrderDetails(order.id)}
+                          style={{ background: "#3b82f6", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "13px" }}
                         >
-                          Hủy đơn
+                          {expandedOrder === order.id ? 'Ẩn' : 'Chi tiết'}
                         </button>
-                      )}
-                    </span>
-                  </div>
+                      </span>
+                    </div>
+                    
+                    {expandedOrder === order.id && (
+                      <div className="order-details-dropdown" style={{ padding: "15px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+                        {detailsLoading ? <p style={{ margin: 0 }}>Đang tải chi tiết...</p> : (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                            <h4 style={{ margin: "0 0 10px 0" }}>Sản phẩm trong đơn hàng:</h4>
+                            {orderDetails.map(item => (
+                              <div key={item.book_id} style={{ display: "flex", alignItems: "center", gap: "15px", background: "#fff", padding: "10px", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
+                                <img src={item.image || "https://via.placeholder.com/50x70"} alt={item.title} style={{ width: "50px", height: "70px", objectFit: "cover", borderRadius: "4px" }} />
+                                <div style={{ flex: 1 }}>
+                                  <h4 style={{ margin: "0 0 5px 0" }}>{item.title}</h4>
+                                  <p style={{ margin: 0, fontSize: "14px", color: "#6b7280" }}>Số lượng: {item.quantity} x {item.price.toLocaleString()} ₫</p>
+                                </div>
+                                <div style={{ fontWeight: "bold" }}>{(item.quantity * item.price).toLocaleString()} ₫</div>
+                                {order.status === "Đã giao" && (
+                                  <div style={{ marginLeft: "15px", minWidth: "120px", textAlign: "right" }}>
+                                    {item.is_reviewed > 0 ? (
+                                      <span style={{ color: "#10b981", fontSize: "14px", fontWeight: "bold" }}>✓ Đã đánh giá</span>
+                                    ) : (
+                                      <button 
+                                        onClick={() => navigate(`/book/${item.book_id}#reviews`)}
+                                        style={{ background: "#f59e0b", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "bold" }}
+                                      >
+                                        Đánh giá ngay
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </React.Fragment>
                 ))}
               </div>
+              
+              {totalPages > 1 && (
+                <div className="pagination" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
+                  <button 
+                    disabled={currentPage === 1} 
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    style={{ padding: "6px 12px", cursor: currentPage === 1 ? "not-allowed" : "pointer", border: "1px solid #d1d5db", background: "#f9fafb", borderRadius: "6px", color: "#374151" }}
+                  >
+                    Trước
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button 
+                      key={page} 
+                      onClick={() => setCurrentPage(page)}
+                      style={{ padding: "6px 12px", cursor: "pointer", border: "1px solid #d1d5db", background: currentPage === page ? "#3b82f6" : "#fff", color: currentPage === page ? "#fff" : "#374151", borderRadius: "6px" }}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button 
+                    disabled={currentPage === totalPages} 
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    style={{ padding: "6px 12px", cursor: currentPage === totalPages ? "not-allowed" : "pointer", border: "1px solid #d1d5db", background: "#f9fafb", borderRadius: "6px", color: "#374151" }}
+                  >
+                    Sau
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

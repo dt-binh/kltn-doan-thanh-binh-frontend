@@ -353,16 +353,36 @@ app.get("/api/admin/stats", verifyToken, async (req, res) => {
       });
     });
 
+    const getMonthlyRevenue = () => new Promise((resolve, reject) => {
+      const query = `
+        SELECT MONTH(order_date) as month, SUM(total) as revenue 
+        FROM orders 
+        WHERE status = 'Đã giao' AND YEAR(order_date) = YEAR(CURDATE()) 
+        GROUP BY MONTH(order_date)
+      `;
+      db.query(query, (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+
     const usersCount = await getCount("SELECT COUNT(*) as count FROM users WHERE role = 'user'");
     const booksCount = await getCount("SELECT COUNT(*) as count FROM books");
     const ordersCount = await getCount("SELECT COUNT(*) as count FROM orders");
     const revenue = await getTotalRevenue();
+    const monthlyRevenueData = await getMonthlyRevenue();
+
+    const revenueByMonth = new Array(12).fill(0);
+    monthlyRevenueData.forEach(item => {
+      revenueByMonth[item.month - 1] = Number(item.revenue) || 0;
+    });
 
     res.json({
       users: usersCount,
       books: booksCount,
       orders: ordersCount,
-      revenue: revenue
+      revenue: revenue,
+      revenueByMonth: revenueByMonth
     });
   } catch (error) {
     res.status(500).json(error);
@@ -394,28 +414,101 @@ app.get("/api/books", (req, res) => {
 // ================= GET BOOK BY ID =================
 app.get("/api/books/:id", (req, res) => {
   const { id } = req.params;
-  const sql = `
-    SELECT
-      books.*,
-      authors.name AS author_name,
-      genres.name AS genre_name
-    FROM books
-    LEFT JOIN authors ON books.author_id = authors.id
-    LEFT JOIN genres ON books.genre_id = genres.id
-    WHERE books.id = ?
-  `;
 
-  db.query(sql, [id], (err, result) => {
-    if (err) {
-      return res.status(500).json(err);
-    }
-    if (result.length === 0) {
-      return res.status(404).json({ message: "Không tìm thấy sách" });
-    }
-    res.json(result[0]);
+  // 1. Tăng lượt xem (cộng thêm 1)
+  const updateViewsSql = "UPDATE books SET views = COALESCE(views, 0) + 1 WHERE id = ?";
+  db.query(updateViewsSql, [id], (updateErr) => {
+    if (updateErr) console.error("Lỗi cập nhật lượt xem:", updateErr);
+
+    // 2. Lấy thông tin sách trả về cho frontend
+    const sql = `
+      SELECT
+        books.*,
+        authors.name AS author_name,
+        genres.name AS genre_name
+      FROM books
+      LEFT JOIN authors ON books.author_id = authors.id
+      LEFT JOIN genres ON books.genre_id = genres.id
+      WHERE books.id = ?
+    `;
+
+    db.query(sql, [id], (err, result) => {
+      if (err) {
+        return res.status(500).json(err);
+      }
+      if (result.length === 0) {
+        return res.status(404).json({ message: "Không tìm thấy sách" });
+      }
+      res.json(result[0]);
+    });
   });
 });
 
+// ================= GET REVIEWS FOR A BOOK =================
+app.get("/api/books/:id/reviews", (req, res) => {
+  const { id } = req.params;
+  const sql = `
+    SELECT reviews.*, users.username 
+    FROM reviews 
+    JOIN users ON reviews.user_id = users.id 
+    WHERE book_id = ? 
+    ORDER BY created_at DESC
+  `;
+  db.query(sql, [id], (err, result) => {
+    if (err) return res.status(500).json(err);
+    res.json(result);
+  });
+});
+
+// ================= ADD A REVIEW =================
+app.post("/api/books/:id/reviews", verifyToken, (req, res) => {
+  const { id } = req.params; // book_id
+  const { rating, comment, image } = req.body;
+  const user_id = req.user.id;
+
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ message: "Vui lòng chọn số sao hợp lệ (1-5)" });
+  }
+
+  const checkOrderSql = "SELECT orders.id FROM orders JOIN order_items ON orders.id = order_items.order_id WHERE orders.user_id = ? AND order_items.book_id = ? AND orders.status = 'Đã giao'";
+  db.query(checkOrderSql, [user_id, id], (err, orderResults) => {
+    if (err) return res.status(500).json(err);
+    if (orderResults.length === 0) {
+      return res.status(400).json({ message: "Bạn chỉ có thể đánh giá khi đơn hàng đã giao thành công" });
+    }
+
+    const checkSql = "SELECT * FROM reviews WHERE book_id = ? AND user_id = ?";
+    db.query(checkSql, [id, user_id], (err, results) => {
+      if (err) return res.status(500).json(err);
+      if (results.length > 0) return res.status(400).json({ message: "Bạn đã đánh giá truyện này rồi" });
+
+      const insertSql = "INSERT INTO reviews (book_id, user_id, rating, comment, image) VALUES (?, ?, ?, ?, ?)";
+      db.query(insertSql, [id, user_id, rating, comment, image || null], (err, result) => {
+        if (err) {
+          // Bắt lỗi nếu bảng reviews chưa có cột image (fallback an toàn để ứng dụng không bị sập)
+          if (err.code === 'ER_BAD_FIELD_ERROR') {
+            const fallbackSql = "INSERT INTO reviews (book_id, user_id, rating, comment) VALUES (?, ?, ?, ?)";
+            db.query(fallbackSql, [id, user_id, rating, comment], (err2, result2) => {
+              if (err2) return res.status(500).json(err2);
+              updateBookRating(res);
+            });
+            return;
+          }
+          return res.status(500).json(err);
+        }
+        updateBookRating(res);
+      });
+
+      function updateBookRating(resObj) {
+        const updateRatingSql = "UPDATE books SET rating = (SELECT AVG(rating) FROM reviews WHERE book_id = ?) WHERE id = ?";
+        db.query(updateRatingSql, [id, id], (err) => {
+          if (err) console.error("Lỗi cập nhật rating sách", err);
+          resObj.status(201).json({ message: "Thêm đánh giá thành công" });
+        });
+      }
+    });
+  });
+});
 
 // ================= CREATE BOOK (ADMIN) =================
 app.post("/api/books", verifyToken, (req, res) => {
@@ -778,14 +871,17 @@ app.get("/api/orders/:id", verifyToken, (req, res) => {
       return res.status(403).json({ message: "Không có quyền truy cập đơn hàng này" });
     }
 
+    const orderUserId = result[0].user_id;
+
     const sql = `
-      SELECT order_items.*, books.title, books.image
+      SELECT order_items.*, books.title, books.image,
+      (SELECT COUNT(*) FROM reviews WHERE book_id = order_items.book_id AND user_id = ?) as is_reviewed
       FROM order_items
       JOIN books ON order_items.book_id = books.id
       WHERE order_items.order_id = ?
     `;
 
-    db.query(sql, [id], (err, items) => {
+    db.query(sql, [orderUserId, id], (err, items) => {
       if (err) return res.status(500).json(err);
       res.json({
         order_info: result[0],
@@ -820,6 +916,14 @@ app.put("/api/orders/:id/status", verifyToken, (req, res) => {
 
     if (order.status === 'Đang giao' && status === 'Đã hủy') {
       return res.status(400).json({ message: "Không thể hủy đơn hàng đang giao" });
+    }
+
+    if (order.status === 'Đã giao') {
+      return res.status(400).json({ message: "Không thể cập nhật trạng thái đơn hàng đã giao" });
+    }
+
+    if (role === "admin" && status === 'Đã hủy') {
+      return res.status(403).json({ message: "Chỉ khách hàng mới có quyền hủy đơn hàng" });
     }
 
     // Nếu không phải admin, kiểm tra các điều kiện để user tự hủy đơn

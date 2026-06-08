@@ -9,7 +9,8 @@ const Dashboard = () => {
     users: 0,
     books: 0,
     orders: 0,
-    revenue: 0
+    revenue: 0,
+    revenueByMonth: new Array(12).fill(0)
   });
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +40,15 @@ const Dashboard = () => {
           })
         ]);
         setStats(statsRes.data);
-        setRecentOrders(ordersRes.data.slice(0, 5)); // Lấy 5 đơn hàng mới nhất
+        
+        // Lọc các đơn hàng trong 2 tháng đổ lại
+        const twoMonthsAgo = new Date();
+        twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+        const recentOrdersFiltered = ordersRes.data.filter(order => {
+          return new Date(order.order_date) >= twoMonthsAgo;
+        });
+        
+        setRecentOrders(recentOrdersFiltered.slice(0, 5)); // Lấy tối đa 5 đơn hàng thỏa mãn
       } catch (error) {
         console.error("Lỗi lấy dữ liệu dashboard:", error);
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
@@ -55,6 +64,10 @@ const Dashboard = () => {
   }, []);
 
   if (loading) return <div>Đang tải dữ liệu...</div>;
+
+  // Tính doanh thu lớn nhất để xác định chiều cao 100% của biểu đồ
+  const maxMonthlyRevenue = Math.max(...(stats.revenueByMonth || [0]));
+  const maxBarHeight = maxMonthlyRevenue > 0 ? maxMonthlyRevenue : 1;
 
   return (
     <main className="admin-content">
@@ -93,16 +106,19 @@ const Dashboard = () => {
         <div className="chart-card">
           <h3>Doanh thu theo tháng</h3>
           <div className="chart-bar">
-            <div className="bar" style={{height: '80%'}}></div>
-            <div className="bar" style={{height: '60%'}}></div>
-            <div className="bar" style={{height: '90%'}}></div>
-            <div className="bar" style={{height: '70%'}}></div>
+            {(stats.revenueByMonth || new Array(12).fill(0)).map((rev, index) => (
+              <div 
+                key={index} 
+                className="bar" 
+                style={{ height: `${(rev / maxBarHeight) * 100}%` }}
+                title={`Tháng ${index + 1}: ${rev.toLocaleString()} ₫`}
+              ></div>
+            ))}
           </div>
           <div className="chart-labels">
-            <span>Th1</span>
-            <span>Th2</span>
-            <span>Th3</span>
-            <span>Th4</span>
+            {[...Array(12)].map((_, i) => (
+              <span key={i}>T{i + 1}</span>
+            ))}
           </div>
         </div>
       </div>

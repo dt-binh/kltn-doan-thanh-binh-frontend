@@ -1,16 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "./Genres.css";
 
 const Genres = () => {
-  // DATA
-  const initialGenres = [
-    { id: 1, name: "Hành động", books: 45 },
-    { id: 2, name: "Lãng mạn", books: 32 },
-    { id: 3, name: "Kinh dị", books: 18 },
-    { id: 4, name: "Hài hước", books: 25 },
-  ];
-
-  const [genres, setGenres] = useState(initialGenres);
+  const navigate = useNavigate();
+  const [genres, setGenres] = useState([]);
 
   // EDIT
   const [editingId, setEditingId] = useState(null);
@@ -18,15 +13,33 @@ const Genres = () => {
 
   // ADD
   const [isAdding, setIsAdding] = useState(false);
-  const [newGenre, setNewGenre] = useState({
-    name: "",
-    books: 0,
-  });
+  const [newGenre, setNewGenre] = useState({ name: "" });
+
+  const token = localStorage.getItem("token");
+
+  const fetchGenres = async () => {
+    const userStr = localStorage.getItem("user");
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (!token || !user || user.role !== "admin") {
+      navigate("/login");
+      return;
+    }
+    try {
+      const res = await axios.get("http://localhost:5000/api/genres");
+      setGenres(res.data);
+    } catch (error) {
+      console.error("Lỗi lấy danh sách thể loại:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchGenres();
+  }, []);
 
   // ================= EDIT =================
   const handleEdit = (genre) => {
     setEditingId(genre.id);
-    setEditData(genre);
+    setEditData({ name: genre.name });
   };
 
   const handleChange = (e) => {
@@ -36,11 +49,17 @@ const Genres = () => {
     });
   };
 
-  const handleSave = () => {
-    setGenres((prev) =>
-      prev.map((g) => (g.id === editingId ? editData : g))
-    );
-    setEditingId(null);
+  const handleSave = async () => {
+    try {
+      await axios.put(`http://localhost:5000/api/genres/${editingId}`, editData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEditingId(null);
+      fetchGenres();
+    } catch (error) {
+      console.error("Lỗi cập nhật", error);
+      alert("Cập nhật thất bại");
+    }
   };
 
   const handleCancel = () => {
@@ -48,37 +67,42 @@ const Genres = () => {
   };
 
   // ================= DELETE =================
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Xóa thể loại này?")) {
-      setGenres((prev) => prev.filter((g) => g.id !== id));
+      try {
+        await axios.delete(`http://localhost:5000/api/genres/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        fetchGenres();
+      } catch (error) {
+        console.error("Lỗi xóa", error);
+        alert("Xóa thất bại");
+      }
     }
   };
 
   // ================= ADD =================
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newGenre.name) return alert("Nhập tên thể loại!");
 
-    const genre = {
-      ...newGenre,
-      id: Date.now(),
-      books: Number(newGenre.books),
-    };
-
-    setGenres((prev) => [genre, ...prev]);
-
-    setNewGenre({
-      name: "",
-      books: 0,
-    });
-
-    setIsAdding(false);
+    try {
+      await axios.post("http://localhost:5000/api/genres", newGenre, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNewGenre({ name: "" });
+      setIsAdding(false);
+      fetchGenres();
+    } catch (error) {
+      console.error("Lỗi thêm", error);
+      alert("Thêm thất bại");
+    }
   };
 
   return (
     <div className="genres-page">
       {/* HEADER */}
       <div className="genres-header">
-        <h2>Quản lý thể loại</h2>
+        <h2>Quản lý thể loại ({genres.length})</h2>
 
         <button
           className="genres-btn-add"
@@ -95,7 +119,6 @@ const Genres = () => {
             <tr>
               <th>ID</th>
               <th>Tên thể loại</th>
-              <th>Số truyện</th>
               <th>Hành động</th>
             </tr>
           </thead>
@@ -112,16 +135,6 @@ const Genres = () => {
                     value={newGenre.name}
                     onChange={(e) =>
                       setNewGenre({ ...newGenre, name: e.target.value })
-                    }
-                  />
-                </td>
-
-                <td>
-                  <input
-                    type="number"
-                    value={newGenre.books}
-                    onChange={(e) =>
-                      setNewGenre({ ...newGenre, books: e.target.value })
                     }
                   />
                 </td>
@@ -154,19 +167,6 @@ const Genres = () => {
                     />
                   ) : (
                     genre.name
-                  )}
-                </td>
-
-                <td>
-                  {editingId === genre.id ? (
-                    <input
-                      type="number"
-                      name="books"
-                      value={editData.books}
-                      onChange={handleChange}
-                    />
-                  ) : (
-                    genre.books
                   )}
                 </td>
 

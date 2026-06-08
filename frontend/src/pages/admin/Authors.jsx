@@ -1,15 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "./Authors.css";
 
 const Authors = () => {
-  // DATA
-  const initialAuthors = [
-    { id: 1, name: "Nguyễn Nhật Ánh", books: 25, country: "Việt Nam" },
-    { id: 2, name: "J.K. Rowling", books: 12, country: "Anh" },
-    { id: 3, name: "Haruki Murakami", books: 8, country: "Nhật" },
-  ];
-
-  const [authors, setAuthors] = useState(initialAuthors);
+  const navigate = useNavigate();
+  const [authors, setAuthors] = useState([]);
 
   // EDIT
   const [editingId, setEditingId] = useState(null);
@@ -17,16 +13,33 @@ const Authors = () => {
 
   // ADD
   const [isAdding, setIsAdding] = useState(false);
-  const [newAuthor, setNewAuthor] = useState({
-    name: "",
-    books: 0,
-    country: "",
-  });
+  const [newAuthor, setNewAuthor] = useState({ name: "", country: "" });
+
+  const token = localStorage.getItem("token");
+
+  const fetchAuthors = async () => {
+    const userStr = localStorage.getItem("user");
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (!token || !user || user.role !== "admin") {
+      navigate("/login");
+      return;
+    }
+    try {
+      const res = await axios.get("http://localhost:5000/api/authors");
+      setAuthors(res.data);
+    } catch (error) {
+      console.error("Lỗi lấy danh sách tác giả:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAuthors();
+  }, []);
 
   // ================= EDIT =================
   const handleEdit = (author) => {
     setEditingId(author.id);
-    setEditData(author);
+    setEditData({ name: author.name, country: author.country });
   };
 
   const handleChange = (e) => {
@@ -36,11 +49,17 @@ const Authors = () => {
     });
   };
 
-  const handleSave = () => {
-    setAuthors((prev) =>
-      prev.map((a) => (a.id === editingId ? editData : a))
-    );
-    setEditingId(null);
+  const handleSave = async () => {
+    try {
+      await axios.put(`http://localhost:5000/api/authors/${editingId}`, editData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEditingId(null);
+      fetchAuthors();
+    } catch (error) {
+      console.error("Lỗi cập nhật", error);
+      alert("Cập nhật thất bại");
+    }
   };
 
   const handleCancel = () => {
@@ -48,39 +67,43 @@ const Authors = () => {
   };
 
   // ================= DELETE =================
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Xóa tác giả này?")) {
-      setAuthors((prev) => prev.filter((a) => a.id !== id));
+      try {
+        await axios.delete(`http://localhost:5000/api/authors/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        fetchAuthors();
+      } catch (error) {
+        console.error("Lỗi xóa", error);
+        alert("Xóa thất bại");
+      }
     }
   };
 
   // ================= ADD =================
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newAuthor.name) return alert("Nhập tên tác giả!");
     if (!newAuthor.country) return alert("Nhập quốc gia!");
 
-    const author = {
-      ...newAuthor,
-      id: Date.now(),
-      books: Number(newAuthor.books),
-    };
-
-    setAuthors((prev) => [author, ...prev]);
-
-    setNewAuthor({
-      name: "",
-      books: 0,
-      country: "",
-    });
-
-    setIsAdding(false);
+    try {
+      await axios.post("http://localhost:5000/api/authors", newAuthor, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNewAuthor({ name: "", country: "" });
+      setIsAdding(false);
+      fetchAuthors();
+    } catch (error) {
+      console.error("Lỗi thêm", error);
+      alert("Thêm thất bại");
+    }
   };
 
   return (
     <div className="authors-page">
       {/* HEADER */}
       <div className="authors-header">
-        <h2>Quản lý tác giả</h2>
+        <h2>Quản lý tác giả ({authors.length})</h2>
 
         <button
           className="authors-btn-add"
@@ -97,7 +120,6 @@ const Authors = () => {
             <tr>
               <th>ID</th>
               <th>Tên tác giả</th>
-              <th>Số truyện</th>
               <th>Quốc gia</th>
               <th>Hành động</th>
             </tr>
@@ -115,16 +137,6 @@ const Authors = () => {
                     value={newAuthor.name}
                     onChange={(e) =>
                       setNewAuthor({ ...newAuthor, name: e.target.value })
-                    }
-                  />
-                </td>
-
-                <td>
-                  <input
-                    type="number"
-                    value={newAuthor.books}
-                    onChange={(e) =>
-                      setNewAuthor({ ...newAuthor, books: e.target.value })
                     }
                   />
                 </td>
@@ -167,19 +179,6 @@ const Authors = () => {
                     />
                   ) : (
                     author.name
-                  )}
-                </td>
-
-                <td>
-                  {editingId === author.id ? (
-                    <input
-                      type="number"
-                      name="books"
-                      value={editData.books}
-                      onChange={handleChange}
-                    />
-                  ) : (
-                    author.books
                   )}
                 </td>
 

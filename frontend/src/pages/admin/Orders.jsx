@@ -52,7 +52,7 @@ const Orders = () => {
 
   return (
     <div className="admin-page">
-      <h2>Quản lý đơn hàng</h2>
+      <h2>Quản lý đơn hàng ({orders.length})</h2>
       <div className="table-container">
         <table className="admin-table">
           <thead>
@@ -86,13 +86,13 @@ const Orders = () => {
                     onChange={(e) => handleStatusChange(order.id, e.target.value)}
                     className={`status ${order.status === 'Đã giao' ? 'success' : order.status === 'Đã hủy' ? 'danger' : 'pending'}`}
                     style={{ border: 'none', outline: 'none', background: 'transparent' }}
-                    disabled={order.status === 'Đã hủy'}
+                    disabled={order.status === 'Đã hủy' || order.status === 'Đã giao'}
                   >
                     {order.status === 'Chờ thanh toán' && <option value="Chờ thanh toán">Chờ thanh toán</option>}
                     <option value="Đang xử lí">Đang xử lí</option>
                     <option value="Đang giao">Đang giao</option>
                     <option value="Đã giao">Đã giao</option>
-                    {order.status !== 'Đang giao' && <option value="Đã hủy">Đã hủy</option>}
+                    {order.status === 'Đã hủy' && <option value="Đã hủy">Đã hủy</option>}
                   </select>
                 </td>
                 <td>{new Date(order.order_date).toLocaleDateString("vi-VN")}</td>

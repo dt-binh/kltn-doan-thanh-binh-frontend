@@ -19,6 +19,12 @@ const BookList = () => {
   const [selectedGenre, setSelectedGenre] = useState("");
   const [selectedAuthor, setSelectedAuthor] = useState("");
   const [sortBy, setSortBy] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset về trang 1 mỗi khi thay đổi bộ lọc tìm kiếm/sắp xếp
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedGenre, selectedAuthor, sortBy]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -113,6 +119,13 @@ const BookList = () => {
     sortBy,
   ]);
 
+  // Tính toán sách cho trang hiện tại
+  const itemsPerPage = 12; // Hiển thị 12 truyện mỗi trang
+  const totalPages = Math.ceil(filteredBooks.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBooks = filteredBooks.slice(indexOfFirstItem, indexOfLastItem);
+
   return (
     <>
       <Header />
@@ -197,7 +210,7 @@ const BookList = () => {
 
                 <div className="books-grid">
 
-                {filteredBooks.map((book) => (
+                {currentBooks.map((book) => (
                   <BookCard
                     key={book.id}
                     book={book}
@@ -212,6 +225,44 @@ const BookList = () => {
                   </div>
                 )}
 
+                {/* Phân trang */}
+                {totalPages > 1 && (
+                  <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "40px", width: "100%", gridColumn: "1 / -1" }}>
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      style={{ padding: "8px 16px", cursor: currentPage === 1 ? "not-allowed" : "pointer", borderRadius: "6px", border: "1px solid #d1d5db", backgroundColor: "#f9fafb", color: "#374151", fontWeight: "500" }}
+                    >
+                      &laquo; Trước
+                    </button>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        style={{
+                          padding: "8px 16px",
+                          cursor: "pointer",
+                          backgroundColor: currentPage === page ? "#3b82f6" : "#fff",
+                          color: currentPage === page ? "#fff" : "#374151",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "6px",
+                          fontWeight: "500"
+                        }}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                    <button
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      style={{ padding: "8px 16px", cursor: currentPage === totalPages ? "not-allowed" : "pointer", borderRadius: "6px", border: "1px solid #d1d5db", backgroundColor: "#f9fafb", color: "#374151", fontWeight: "500" }}
+                    >
+                      Sau &raquo;
+                    </button>
+                  </div>
+                )}
               </div>
 
             </div>

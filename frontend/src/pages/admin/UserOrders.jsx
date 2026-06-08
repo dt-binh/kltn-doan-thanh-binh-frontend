@@ -82,6 +82,9 @@ const UserOrders = () => {
                                 <div className="order-info-group">
                                     <span className="order-id">Mã ĐH: <strong>{order.id.toString().padStart(4, "0")}</strong></span>
                                     <span className="order-date">Ngày đặt: {new Date(order.order_date).toLocaleDateString('vi-VN')}</span>
+                                    <span className="order-payment">
+                                        Thanh toán: <strong style={{ color: order.payment_method === 'qr' ? '#10b981' : '#4b5563' }}>{order.payment_method === 'qr' ? 'Mã QR' : 'Tiền mặt'}</strong>
+                                    </span>
                                 </div>
                                 <div className="order-info-group">
                                     <span className="order-total">Tổng tiền: <strong>{order.total.toLocaleString()} ₫</strong></span>

@@ -1,5 +1,10 @@
 .profile-page {
-  background: #f6f7fb;
+  background: linear-gradient(
+    135deg,
+    #fff0f5,
+    #ffe4ec,
+    #ffd6e0
+  );
   padding: 50px 0 80px 0;
 }
 
@@ -9,7 +14,10 @@
   padding: 0 18px;
 }
 
-/* Header */
+/* =========================
+   HEADER
+========================= */
+
 .profile-header {
   margin-bottom: 28px;
 }
@@ -18,7 +26,7 @@
   margin: 0;
   font-size: 32px;
   font-weight: 900;
-  color: #111827;
+  color: #d6336c;
 }
 
 .profile-header p {
@@ -28,7 +36,10 @@
   color: rgba(17, 24, 39, 0.65);
 }
 
-/* Grid layout */
+/* =========================
+   GRID
+========================= */
+
 .profile-grid {
   display: grid;
   grid-template-columns: 380px 1fr;
@@ -36,23 +47,33 @@
   align-items: start;
 }
 
-/* Profile Info */
+/* =========================
+   PROFILE INFO
+========================= */
+
 .profile-info {
-  background: white;
-  border-radius: 20px;
+  background: #fffafb;
+  border-radius: 22px;
   padding: 22px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.06);
+
+  border: 1px solid #ffd6e0;
+
+  box-shadow:
+    0 20px 50px rgba(255, 77, 109, 0.12),
+    0 5px 15px rgba(0, 0, 0, 0.05);
 }
 
 .profile-info h2 {
   margin: 0 0 18px 0;
   font-size: 18px;
   font-weight: 900;
-  color: #111827;
+  color: #d6336c;
 }
 
-/* Info display */
+/* =========================
+   INFO DISPLAY
+========================= */
+
 .info-display p {
   margin: 0 0 12px 0;
   font-size: 14px;
@@ -64,25 +85,36 @@
   color: #111827;
 }
 
+/* Edit button */
 .edit-btn {
-  margin-top: 10px;
+  margin-top: 12px;
   width: 100%;
   border: none;
   padding: 12px;
   border-radius: 14px;
-  background: #ff4d6d;
+
+  background: linear-gradient(
+    135deg,
+    #ff4d6d,
+    #ff758f
+  );
+
   color: white;
   font-weight: 900;
   cursor: pointer;
+
   transition: 0.25s;
 }
 
 .edit-btn:hover {
-  background: #ff2e56;
   transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(255, 77, 109, 0.25);
 }
 
-/* Form */
+/* =========================
+   FORM
+========================= */
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -93,23 +125,32 @@
 .form-group label {
   font-size: 13px;
   font-weight: 800;
-  color: rgba(17, 24, 39, 0.8);
+  color: #6b7280;
 }
 
 .form-group input {
   padding: 12px 14px;
   border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+
+  border: 1px solid #ffd6e0;
+  background: #ffffff;
+
   outline: none;
   font-size: 14px;
   font-weight: 600;
+
+  transition: 0.25s;
 }
 
 .form-group input:focus {
-  border: 1px solid rgba(255, 77, 109, 0.65);
+  border-color: #ff4d6d;
+  box-shadow: 0 0 0 4px rgba(255, 77, 109, 0.12);
 }
 
-/* Buttons */
+/* =========================
+   BUTTONS
+========================= */
+
 .profile-buttons {
   display: flex;
   gap: 12px;
@@ -121,15 +162,18 @@
   border: none;
   padding: 12px;
   border-radius: 14px;
+
   background: #16a34a;
   color: white;
   font-weight: 900;
   cursor: pointer;
-  transition: 0.2s;
+
+  transition: 0.25s;
 }
 
 .save-btn:hover {
-  background: #15803d;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(22, 163, 74, 0.2);
 }
 
 .cancel-btn {
@@ -137,34 +181,47 @@
   border: none;
   padding: 12px;
   border-radius: 14px;
-  background: #e5e7eb;
-  color: #111827;
+
+  background: #ffe4ec;
+  color: #d6336c;
+
   font-weight: 900;
   cursor: pointer;
-  transition: 0.2s;
+
+  transition: 0.25s;
 }
 
 .cancel-btn:hover {
-  background: #d1d5db;
+  background: #ffd6e0;
 }
 
-/* Orders */
+/* =========================
+   ORDERS
+========================= */
+
 .orders-history {
-  background: white;
-  border-radius: 20px;
+  background: #fffafb;
+  border-radius: 22px;
   padding: 22px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.06);
+
+  border: 1px solid #ffd6e0;
+
+  box-shadow:
+    0 20px 50px rgba(255, 77, 109, 0.12),
+    0 5px 15px rgba(0, 0, 0, 0.05);
 }
 
 .orders-history h2 {
   margin: 0 0 18px 0;
   font-size: 18px;
   font-weight: 900;
-  color: #111827;
+  color: #d6336c;
 }
 
-/* Table */
+/* =========================
+   TABLE
+========================= */
+
 .orders-table {
   width: 100%;
   display: flex;
@@ -175,27 +232,38 @@
   display: grid;
   grid-template-columns: 1.2fr 1.2fr 1.2fr 1fr;
   padding: 12px;
+
   border-radius: 14px;
-  background: #f3f4f6;
+
+  background: #fff5f8;
+  border: 1px solid #ffd6e0;
+
   font-size: 13px;
   font-weight: 900;
-  color: rgba(17, 24, 39, 0.75);
+  color: #d6336c;
+
   margin-bottom: 10px;
 }
 
 .table-row {
   display: grid;
   grid-template-columns: 1.2fr 1.2fr 1.2fr 1fr;
+
   padding: 14px 12px;
   border-radius: 14px;
+
+  background: #ffffff;
+  border: 1px solid #ffd6e0;
+
   font-size: 14px;
   font-weight: 700;
+
   color: rgba(17, 24, 39, 0.8);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+
   margin-bottom: 10px;
-  background: white;
 }
 
+/* Status */
 .status {
   font-weight: 900;
   color: #f59e0b;
@@ -205,7 +273,14 @@
   color: #16a34a;
 }
 
-/* Responsive */
+.status.danger {
+  color: #ef4444;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
 @media (max-width: 992px) {
   .profile-grid {
     grid-template-columns: 1fr;

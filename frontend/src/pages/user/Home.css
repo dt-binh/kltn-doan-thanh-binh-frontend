@@ -1,6 +1,11 @@
 .home-page {
   min-height: 100vh;
-  background: #f6f7fb;
+  background: linear-gradient(
+    135deg,
+    #fff0f5,
+    #ffe4ec,
+    #ffd6e0
+  );
 }
 
 /* Container RIÊNG cho Home */
@@ -84,7 +89,9 @@
   padding: 35px 0 80px 0;
 }
 
-/* Header trong section */
+/* ========================= */
+/* Section Header */
+/* ========================= */
 .home-section-header {
   display: flex;
   justify-content: space-between;
@@ -96,7 +103,7 @@
   margin: 0;
   font-size: 28px;
   font-weight: 900;
-  color: #111827;
+  color: #d6336c;
 }
 
 .home-view-all {
@@ -113,7 +120,7 @@
 }
 
 /* ========================= */
-/* Categories grid */
+/* Categories */
 /* ========================= */
 .home-genre-grid {
   display: grid;
@@ -126,23 +133,29 @@
   align-items: center;
   gap: 14px;
 
-  background: white;
-  padding: 18px 18px;
+  background: #fffafb;
+  padding: 18px;
+
   border-radius: 18px;
-
   text-decoration: none;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0px 8px 18px rgba(0, 0, 0, 0.05);
 
-  transition: 0.25s;
+  border: 1px solid #ffd6e0;
+
+  box-shadow:
+    0 10px 25px rgba(255, 77, 109, 0.08),
+    0 4px 10px rgba(0, 0, 0, 0.04);
+
+  transition: all 0.25s ease;
 }
 
 .home-genre-card:hover {
   transform: translateY(-6px);
-  border: 1px solid rgba(255, 77, 109, 0.35);
-  box-shadow: 0px 14px 28px rgba(255, 77, 109, 0.18);
-  background-color: #ff4d6d;
-  
+  background: #ff4d6d;
+  border-color: #ff4d6d;
+
+  box-shadow:
+    0 15px 30px rgba(255, 77, 109, 0.25),
+    0 8px 15px rgba(255, 77, 109, 0.15);
 }
 
 .home-genre-icon {
@@ -151,6 +164,7 @@
   border-radius: 14px;
 
   background: rgba(255, 77, 109, 0.12);
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -163,13 +177,15 @@
   font-size: 20px;
   font-weight: 800;
   color: #ff4d6d;
+  transition: 0.25s;
 }
 
-.home-genre-card:hover p{
+.home-genre-card:hover p {
   color: white;
 }
+
 /* ========================= */
-/* Books grid */
+/* Books */
 /* ========================= */
 .home-books-grid {
   display: grid;
@@ -180,6 +196,46 @@
 .home-books-grid a {
   text-decoration: none;
   color: inherit;
+}
+
+/* ========================= */
+/* Pagination */
+/* ========================= */
+.home-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 40px;
+}
+
+.home-pagination button {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid #ffd6e0;
+
+  background: #fffafb;
+  color: #d6336c;
+
+  font-weight: 700;
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+}
+
+.home-pagination button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: #ff4d6d;
+}
+
+.home-pagination button.active {
+  background: #ff4d6d;
+  color: white;
+  border-color: #ff4d6d;
+}
+
+.home-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ========================= */
@@ -223,10 +279,7 @@
     gap: 8px;
   }
 
-  .home-genre-grid {
-    grid-template-columns: 1fr;
-  }
-
+  .home-genre-grid,
   .home-books-grid {
     grid-template-columns: 1fr;
   }
