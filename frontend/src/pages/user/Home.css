@@ -284,3 +284,42 @@
     grid-template-columns: 1fr;
   }
 }
+/* =========================
+   PAGINATION
+========================= */
+
+.home-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 40px;
+}
+
+.home-pagination-btn {
+  padding: 8px 16px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+
+  background-color: #f9fafb;
+  color: #374151;
+
+  font-weight: 500;
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.home-pagination-btn:hover:not(:disabled) {
+  background-color: #e5e7eb;
+}
+
+.home-pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.home-pagination-active {
+  background-color: #3b82f6;
+  color: #fff;
+}

@@ -119,3 +119,19 @@
 .item-title { margin: 0 0 8px 0; font-weight: 600; color: #0f172a; }
 .item-qty-price { margin: 0; color: #6b7280; font-size: 0.9rem; }
 .item-subtotal { font-weight: 600; color: #4f46e5; margin: 0; }
+
+/* =========================
+   PAYMENT METHOD
+========================= */
+
+.payment-method {
+  font-weight: 700;
+}
+
+.payment-qr {
+  color: #10b981;
+}
+
+.payment-cash {
+  color: #4b5563;
+}

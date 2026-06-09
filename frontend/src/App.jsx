@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom" /*Sd thư viện React Router DOM để điều hướng giữa các trang mà không cần tải lại website. */
 import Home from "./pages/user/Home"
 import BookList from "./pages/user/BookList"
 import Cart from "./pages/user/Cart"

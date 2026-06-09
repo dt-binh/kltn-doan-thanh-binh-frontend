@@ -227,12 +227,12 @@ const BookList = () => {
 
                 {/* Phân trang */}
                 {totalPages > 1 && (
-                  <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "40px", width: "100%", gridColumn: "1 / -1" }}>
-                    <button
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      style={{ padding: "8px 16px", cursor: currentPage === 1 ? "not-allowed" : "pointer", borderRadius: "6px", border: "1px solid #d1d5db", backgroundColor: "#f9fafb", color: "#374151", fontWeight: "500" }}
-                    >
+                  <div className="pagination">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    className="pagination-btn"
+                  >
                       &laquo; Trước
                     </button>
                     
@@ -240,15 +240,9 @@ const BookList = () => {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        style={{
-                          padding: "8px 16px",
-                          cursor: "pointer",
-                          backgroundColor: currentPage === page ? "#3b82f6" : "#fff",
-                          color: currentPage === page ? "#fff" : "#374151",
-                          border: "1px solid #d1d5db",
-                          borderRadius: "6px",
-                          fontWeight: "500"
-                        }}
+                        className={`pagination-btn ${
+                          currentPage === page ? "pagination-active" : ""
+                        }`}
                       >
                         {page}
                       </button>
@@ -257,7 +251,7 @@ const BookList = () => {
                     <button
                       disabled={currentPage === totalPages}
                       onClick={() => setCurrentPage(currentPage + 1)}
-                      style={{ padding: "8px 16px", cursor: currentPage === totalPages ? "not-allowed" : "pointer", borderRadius: "6px", border: "1px solid #d1d5db", backgroundColor: "#f9fafb", color: "#374151", fontWeight: "500" }}
+                      className="pagination-btn"
                     >
                       Sau &raquo;
                     </button>

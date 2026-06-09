@@ -245,7 +245,7 @@ const Profile = () => {
               <h2>Lịch sử đơn hàng</h2>
 
               <div className="orders-table">
-                <div className="table-header" style={{ gridTemplateColumns: "0.8fr 1fr 1fr 1.5fr 1.2fr 1.5fr" }}>
+                <div className="table-header orders-header">
                   <span>Mã đơn</span>
                   <span>Ngày đặt</span>
                   <span>Tổng tiền</span>
@@ -256,11 +256,17 @@ const Profile = () => {
 
                 {currentOrders.map((order) => (
                   <React.Fragment key={order.id}>
-                    <div className="table-row" style={{ gridTemplateColumns: "0.8fr 1fr 1fr 1.5fr 1.2fr 1.5fr", alignItems: "center" }}>
+                    <div className="table-row orders-row">
                     <span>DH{order.id.toString().padStart(4, "0")}</span>
                     <span>{new Date(order.order_date).toLocaleDateString("vi-VN")}</span>
                     <span>{order.total.toLocaleString()} ₫</span>
-                    <span style={{ fontWeight: "500", color: order.payment_method === 'qr' ? "#10b981" : "#4b5563" }}>
+                   <span
+                      className={
+                        order.payment_method === "qr"
+                          ? "payment-qr"
+                          : "payment-cod"
+                      }
+                    >
                       {order.payment_method === 'qr' ? 'Đã thanh toán QR' : 'Tiền mặt'}
                     </span>
                     <span
@@ -270,45 +276,65 @@ const Profile = () => {
                     >
                       {order.status}
                     </span>
-                      <span style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+                      <span className="action-buttons">
                         {((order.payment_method === 'cod' && order.status === 'Đang xử lí') || (order.payment_method === 'qr' && order.status === 'Chờ thanh toán')) && (
                           <button
                             onClick={() => handleCancelOrder(order.id)}
-                            style={{ background: "#ef4444", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "13px" }}
+                            className="cancel-order-btn"
                           >
                             Hủy
                           </button>
                         )}
                         <button
                           onClick={() => handleToggleOrderDetails(order.id)}
-                          style={{ background: "#3b82f6", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "13px" }}
+                          className="detail-order-btn"
                         >
-                          {expandedOrder === order.id ? 'Ẩn' : 'Chi tiết'}
+                          {expandedOrder === order.id ? "Ẩn" : "Chi tiết"}
                         </button>
                       </span>
                     </div>
                     
                     {expandedOrder === order.id && (
-                      <div className="order-details-dropdown" style={{ padding: "15px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+                     <div className="order-details-dropdown">
                         {detailsLoading ? <p style={{ margin: 0 }}>Đang tải chi tiết...</p> : (
-                          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                            <h4 style={{ margin: "0 0 10px 0" }}>Sản phẩm trong đơn hàng:</h4>
+                          <div className="order-details-container">
+                            <h4 className="order-details-title">
+                              Sản phẩm trong đơn hàng:
+                            </h4>
                             {orderDetails.map(item => (
-                              <div key={item.book_id} style={{ display: "flex", alignItems: "center", gap: "15px", background: "#fff", padding: "10px", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
-                                <img src={item.image || "https://via.placeholder.com/50x70"} alt={item.title} style={{ width: "50px", height: "70px", objectFit: "cover", borderRadius: "4px" }} />
-                                <div style={{ flex: 1 }}>
-                                  <h4 style={{ margin: "0 0 5px 0" }}>{item.title}</h4>
-                                  <p style={{ margin: 0, fontSize: "14px", color: "#6b7280" }}>Số lượng: {item.quantity} x {item.price.toLocaleString()} ₫</p>
+                              <div
+                                key={item.book_id}
+                                className="order-item"
+                              >
+                                <img
+                                  src={item.image || "https://via.placeholder.com/50x70"}
+                                  alt={item.title}
+                                  className="order-item-image"
+                                />
+                                <div className="order-item-info">
+                                  <h4 className="order-item-title">
+                                    {item.title}
+                                  </h4>
+
+                                  <p className="order-item-desc">
+                                    Số lượng: {item.quantity} x {item.price.toLocaleString()} ₫
+                                  </p>
                                 </div>
-                                <div style={{ fontWeight: "bold" }}>{(item.quantity * item.price).toLocaleString()} ₫</div>
+                               <div className="order-item-total">
+                                {(item.quantity * item.price).toLocaleString()} ₫
+                              </div>
                                 {order.status === "Đã giao" && (
-                                  <div style={{ marginLeft: "15px", minWidth: "120px", textAlign: "right" }}>
+                                  <div className="review-section">
                                     {item.is_reviewed > 0 ? (
-                                      <span style={{ color: "#10b981", fontSize: "14px", fontWeight: "bold" }}>✓ Đã đánh giá</span>
+                                      <span className="reviewed">
+                                        ✓ Đã đánh giá
+                                      </span>
                                     ) : (
-                                      <button 
-                                        onClick={() => navigate(`/book/${item.book_id}#reviews`)}
-                                        style={{ background: "#f59e0b", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "bold" }}
+                                      <button
+                                        className="review-btn"
+                                        onClick={() =>
+                                          navigate(`/book/${item.book_id}#reviews`)
+                                        }
                                       >
                                         Đánh giá ngay
                                       </button>
@@ -326,27 +352,29 @@ const Profile = () => {
               </div>
               
               {totalPages > 1 && (
-                <div className="pagination" style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "20px" }}>
-                  <button 
-                    disabled={currentPage === 1} 
+                <div className="pagination">
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage === 1}
                     onClick={() => setCurrentPage(currentPage - 1)}
-                    style={{ padding: "6px 12px", cursor: currentPage === 1 ? "not-allowed" : "pointer", border: "1px solid #d1d5db", background: "#f9fafb", borderRadius: "6px", color: "#374151" }}
                   >
                     Trước
                   </button>
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button 
-                      key={page} 
+                    <button
+                      key={page}
                       onClick={() => setCurrentPage(page)}
-                      style={{ padding: "6px 12px", cursor: "pointer", border: "1px solid #d1d5db", background: currentPage === page ? "#3b82f6" : "#fff", color: currentPage === page ? "#fff" : "#374151", borderRadius: "6px" }}
+                      className={`pagination-number ${
+                        currentPage === page ? "active" : ""
+                      }`}
                     >
                       {page}
                     </button>
                   ))}
-                  <button 
-                    disabled={currentPage === totalPages} 
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage(currentPage + 1)}
-                    style={{ padding: "6px 12px", cursor: currentPage === totalPages ? "not-allowed" : "pointer", border: "1px solid #d1d5db", background: "#f9fafb", borderRadius: "6px", color: "#374151" }}
                   >
                     Sau
                   </button>

@@ -16,13 +16,7 @@ const BookImage = ({ src, alt }) => {
     <img
       src={imageUrl}
       alt={alt}
-      style={{
-        width: "45px",
-        height: "65px",
-        objectFit: "cover",
-        borderRadius: "6px",
-        border: "1px solid #e5e7eb",
-      }}
+      className="book-thumbnail"
       onError={() => setError(true)}
     />
   );
@@ -525,28 +519,22 @@ const Books = () => {
       </div>
 
       {/* PAGINATION CONTROLS */}
-      {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "20px", marginBottom: "20px" }}>
+        <div className="pagination">
           <button
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(currentPage - 1)}
-            style={{ padding: "6px 12px", cursor: currentPage === 1 ? "not-allowed" : "pointer", borderRadius: "4px", border: "1px solid #d1d5db", backgroundColor: "#fff" }}
+            className="pagination-btn"
           >
             &laquo; Trước
           </button>
-          
+
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
-              style={{
-                padding: "6px 12px",
-                cursor: "pointer",
-                backgroundColor: currentPage === page ? "#3b82f6" : "#fff",
-                color: currentPage === page ? "#fff" : "#374151",
-                border: "1px solid #d1d5db",
-                borderRadius: "4px"
-              }}
+              className={`pagination-btn ${
+                currentPage === page ? "active-page" : ""
+              }`}
             >
               {page}
             </button>
@@ -555,12 +543,11 @@ const Books = () => {
           <button
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(currentPage + 1)}
-            style={{ padding: "6px 12px", cursor: currentPage === totalPages ? "not-allowed" : "pointer", borderRadius: "4px", border: "1px solid #d1d5db", backgroundColor: "#fff" }}
+            className="pagination-btn"
           >
-            Sau &raquo;
-          </button>
-        </div>
-      )}
+          Sau &raquo;
+        </button>
+      </div>
     </div>
   );
 };

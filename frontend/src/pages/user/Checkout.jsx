@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Header from "../../components/common/Header";
 import Footer from "../../components/common/Footer";
+import "./Checkout.css";
 
 const Checkout = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -116,25 +117,39 @@ const Checkout = () => {
     return (
       <>
         <Header />
-        <main style={{ padding: "60px 20px", maxWidth: "600px", margin: "0 auto", textAlign: "center", minHeight: "60vh" }}>
-          <h2 style={{ color: "#10b981", marginBottom: "10px" }}>Đơn hàng đã được tạo!</h2>
-          <p style={{ fontSize: "16px", color: "#4b5563", marginBottom: "20px" }}>
+        <main className="checkout-qr-page">
+          <h2 className="qr-title">Đơn hàng đã được tạo!</h2>
+          <p className="qr-desc">
             Vui lòng mở ứng dụng ngân hàng và quét mã QR bên dưới để thanh toán.
           </p>
-          <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", border: "1px solid #e5e7eb", display: "inline-block" }}>
-            <img src={qrCodeUrl} alt="Mã QR Chuyển Khoản" style={{ width: "250px", borderRadius: "10px", marginBottom: "15px" }} />
-            <p style={{ margin: 0, fontWeight: "bold", fontSize: "18px" }}>Số tiền: <span style={{ color: "#e63946" }}>{totalAmount.toLocaleString()} ₫</span></p>
-            <p style={{ margin: "5px 0 0 0", color: "#6b7280" }}>Nội dung: <strong style={{ color: "#1f2937" }}>{orderCode}</strong></p>
+          <div className="qr-card">
+            <img
+              src={qrCodeUrl}
+              alt="Mã QR Chuyển Khoản"
+              className="qr-image"
+            />
+            <p className="qr-amount">
+              Số tiền:
+              <span className="qr-price">
+                {totalAmount.toLocaleString()} ₫
+              </span>
+            </p>
+           <p className="qr-content">
+              Nội dung:
+              <strong className="qr-order-code">
+                {orderCode}
+              </strong>
+            </p>
           </div>
-          <div style={{ marginTop: "30px", color: "#f59e0b", fontWeight: "500", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
-            <span style={{ width: "20px", height: "20px", border: "3px solid #f3f4f6", borderTop: "3px solid #f59e0b", borderRadius: "50%", animation: "spin 1s linear infinite" }}></span>
+          <div className="qr-waiting">
+            <span className="spinner"></span>
             Hệ thống đang tự động chờ nhận tiền...
           </div>
 
-      <div style={{ marginTop: "30px", display: "flex", justifyContent: "center", gap: "15px", flexWrap: "wrap" }}>
-      <button 
-        onClick={handleChangePaymentMethod} 
-        style={{ padding: "10px 20px", background: "transparent", border: "1px solid #3b82f6", borderRadius: "8px", cursor: "pointer", color: "#3b82f6", fontWeight: "bold" }}
+      <div className="qr-actions">
+      <button
+        onClick={handleChangePaymentMethod}
+        className="change-payment-btn"
       >
         Thay đổi phương thức thanh toán
       </button>
@@ -149,80 +164,86 @@ const Checkout = () => {
   return (
     <>
       <Header />
-      <main style={{ padding: "40px 20px", maxWidth: "900px", margin: "0 auto", minHeight: "60vh" }}>
-        <h2 style={{ borderBottom: "2px solid #eee", paddingBottom: "10px", marginBottom: "20px" }}>
+      <main className="checkout-page">
+        <h2 className="checkout-title">
           Thanh toán đơn hàng
         </h2>
         
-        <div style={{ display: "flex", gap: "40px", flexWrap: "wrap" }}>
+        <div className="checkout-layout">
           
           {/* CỘT TRÁI: THÔNG TIN ĐƠN HÀNG */}
-          <div style={{ flex: 1, minWidth: "300px" }}>
+          <div className="checkout-left">
             <h3>Tóm tắt đơn hàng</h3>
-            <ul style={{ listStyle: "none", padding: 0 }}>
+            <ul className="checkout-list">
               {cartItems.map((item) => (
-                <li key={item.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", borderBottom: "1px dashed #eee", paddingBottom: "8px" }}>
+                <li key={item.id} className="checkout-item">
                   <span>{item.title} <strong>(x{item.quantity})</strong></span>
                   <span>{(item.price * item.quantity).toLocaleString()} ₫</span>
                 </li>
               ))}
             </ul>
             
-            <h3 style={{ display: "flex", justifyContent: "space-between", marginTop: "20px" }}>
+            <h3 className="checkout-total">
               <span>Tổng cộng thanh toán:</span>
-              <span style={{ color: "#e63946", fontSize: "24px" }}>{totalAmount.toLocaleString()} ₫</span>
+              <span className="checkout-price">{totalAmount.toLocaleString()} ₫</span>
             </h3>
             
-            <div style={{ marginTop: "20px", padding: "15px", background: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
-              <h4 style={{ margin: "0 0 10px 0", color: "#374151" }}>Chọn phương thức thanh toán</h4>
-              <label style={{ display: "block", marginBottom: "10px", cursor: "pointer", fontSize: "15px" }}>
-                <input 
-                  type="radio" 
-                  value="cod" 
-                  checked={paymentMethod === "cod"} 
-                  onChange={() => setPaymentMethod("cod")} 
-                  style={{ marginRight: "10px" }}
+            <div className="payment-box">
+              <h4 className="payment-title">Chọn phương thức thanh toán</h4>
+              <label className="payment-option">
+                <input
+                  type="radio"
+                  value="cod"
+                  checked={paymentMethod === "cod"}
+                  onChange={() => setPaymentMethod("cod")}
+                  className="payment-radio"
                 />
                 Thanh toán khi nhận hàng (Tiền mặt)
               </label>
-              <label style={{ display: "block", cursor: "pointer", fontSize: "15px" }}>
-                <input 
-                  type="radio" 
-                  value="qr" 
-                  checked={paymentMethod === "qr"} 
-                  onChange={() => setPaymentMethod("qr")} 
-                  style={{ marginRight: "10px" }}
+              <label className="payment-option">
+                <input
+                  type="radio"
+                  value="qr"
+                  checked={paymentMethod === "qr"}
+                  onChange={() => setPaymentMethod("qr")}
+                  className="payment-radio"
                 />
                 Chuyển khoản qua mã QR
               </label>
             </div>
 
-            <button 
-              onClick={handleCheckout} 
+            <button
+              onClick={handleCheckout}
               disabled={loading || cartItems.length === 0}
-              style={{
-                width: "100%", padding: "14px", background: "#10b981", color: "#fff", 
-                border: "none", borderRadius: "8px", fontSize: "16px", cursor: "pointer", marginTop: "30px",
-                fontWeight: "bold"
-              }}
+              className="checkout-btn"
             >
               {loading ? "Đang xử lý..." : "Xác nhận & Đặt hàng"}
             </button>
           </div>
 
           {/* CỘT PHẢI: HƯỚNG DẪN THANH TOÁN */}
-          <div style={{ flex: 1, minWidth: "300px", background: "#f9fafb", padding: "25px", borderRadius: "12px", textAlign: "center", border: "1px solid #e5e7eb" }}>
+          <div className="checkout-right">
             {paymentMethod === "qr" ? (
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", color: "#4b5563" }}>
-                <h3 style={{ margin: "0 0 15px 0", color: "#1f2937" }}>Thanh toán qua QR Code</h3>
+              <div className="checkout-guide">
+                <h3 className="guide-title">Thanh toán qua QR Code</h3>
                 <p>Sau khi bấm đặt hàng, hệ thống sẽ tạo mã QR để bạn quét thanh toán tự động.</p>
-                <div style={{ fontSize: "50px", marginTop: "20px" }}>📱</div>
+                <div className="guide-icon">
+                  📱
+                </div>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", color: "#4b5563" }}>
-                <h3 style={{ margin: "0 0 15px 0", color: "#1f2937" }}>Thanh toán tiền mặt (COD)</h3>
-                <p>Bạn sẽ thanh toán bằng tiền mặt trực tiếp cho nhân viên giao hàng khi nhận được sách.</p>
-                <div style={{ fontSize: "50px", marginTop: "20px" }}>🚚</div>
+              <div className="checkout-guide">
+                <h3 className="guide-title">
+                  Thanh toán tiền mặt (COD)
+                </h3>
+
+                <p>
+                  Bạn sẽ thanh toán bằng tiền mặt trực tiếp cho nhân viên giao hàng khi nhận được sách.
+                </p>
+
+                <div className="guide-icon">
+                  🚚
+                </div>
               </div>
             )}
           </div>
