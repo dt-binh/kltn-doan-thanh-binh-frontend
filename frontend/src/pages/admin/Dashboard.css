@@ -28,11 +28,11 @@
 .admin-header {
   height: 70px;
   margin-left: 32px;
-  width:1635px;
-
+  width:960px;
+  border-radius: 10px;
   background: rgba(255, 250, 251, 0.85);
   backdrop-filter: blur(12px);
-
+  margin-top: 10px;
   border-bottom: 1px solid #ffd6e0;
 
   display: flex;
@@ -117,7 +117,7 @@
 
 .stat-info h3 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   color: #d6336c;
   font-weight: 900;
 }

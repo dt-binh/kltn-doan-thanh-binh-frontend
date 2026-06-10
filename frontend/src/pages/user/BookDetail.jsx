@@ -232,27 +232,27 @@ const BookDetail = () => {
             <h2>Đánh giá & Nhận xét</h2>
 
             {/* Thống kê đánh giá */}
-            <div className="review-stats" style={{ display: "flex", flexWrap: "wrap", gap: "30px", marginBottom: "30px", padding: "20px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", alignItems: "center", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
-              <div className="average-score" style={{ textAlign: "center", minWidth: "150px" }}>
-                <div style={{ fontSize: "48px", fontWeight: "bold", color: "#f59e0b", lineHeight: "1" }}>{averageRating || "0"}</div>
-                <div className="stars" style={{ color: "#f59e0b", fontSize: "20px", margin: "10px 0", letterSpacing: "2px" }}>
+            <div className="review-stats-container">
+              <div className="average-score-container">
+                <div className="average-score-value">{averageRating || "0"}</div>
+                <div className="average-score-stars">
                   {"★".repeat(Math.round(averageRating || 0))}
                   {"☆".repeat(5 - Math.round(averageRating || 0))}
                 </div>
-                <div style={{ color: "#6b7280", fontSize: "14px" }}>{totalReviews} đánh giá</div>
+                <div className="average-score-count">{totalReviews} đánh giá</div>
               </div>
               
-              <div className="rating-bars" style={{ flex: 1, minWidth: "250px" }}>
+              <div className="rating-bars-container">
                 {[5, 4, 3, 2, 1].map(star => {
                   const count = ratingCounts[star];
                   const percentage = totalReviews > 0 ? (count / totalReviews) * 100 : 0;
                   return (
-                    <div key={star} style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                      <span style={{ minWidth: "45px", fontSize: "14px", color: "#4b5563", fontWeight: "500" }}>{star} Sao</span>
-                      <div style={{ flex: 1, height: "10px", background: "#f3f4f6", borderRadius: "5px", overflow: "hidden" }}>
-                        <div style={{ width: `${percentage}%`, height: "100%", background: "#f59e0b", borderRadius: "5px", transition: "width 0.3s ease" }}></div>
+                    <div key={star} className="rating-bar-row">
+                      <span className="rating-bar-label">{star} Sao</span>
+                      <div className="rating-bar-track">
+                        <div className="rating-bar-fill" style={{ width: `${percentage}%` }}></div>
                       </div>
-                      <span style={{ minWidth: "40px", fontSize: "14px", color: "#6b7280", textAlign: "right" }}>{percentage.toFixed(0)}%</span>
+                      <span className="rating-bar-percent">{percentage.toFixed(0)}%</span>
                     </div>
                   );
                 })}
@@ -260,15 +260,15 @@ const BookDetail = () => {
             </div>
 
             {/* Form đánh giá */}
-            <div className="review-form" style={{ marginBottom: "30px", background: "#f9fafb", padding: "20px", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
-              <h3 style={{ marginTop: 0 }}>Viết đánh giá của bạn</h3>
+            <div className="review-form-container">
+              <h3 className="review-form-title">Viết đánh giá của bạn</h3>
               <form onSubmit={handleReviewSubmit}>
-                <div style={{ marginBottom: "15px" }}>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>Đánh giá (Sao):</label>
+                <div className="review-form-group">
+                  <label className="review-form-label">Đánh giá (Sao):</label>
                   <select 
                     value={newReview.rating} 
                     onChange={(e) => setNewReview({...newReview, rating: parseInt(e.target.value)})}
-                    style={{ padding: "10px", borderRadius: "6px", border: "1px solid #d1d5db", width: "100%", maxWidth: "200px", outline: "none" }}
+                    className="review-form-select"
                   >
                     <option value={5}>5 Sao - Tuyệt vời</option>
                     <option value={4}>4 Sao - Rất tốt</option>
@@ -278,40 +278,19 @@ const BookDetail = () => {
                   </select>
                 </div>
 
-                <div style={{ marginBottom: "15px" }}>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "500" }}>Bình luận:</label>
+                <div className="review-form-group">
+                  <label className="review-form-label">Bình luận:</label>
                   <textarea 
                     value={newReview.comment}
                     onChange={(e) => setNewReview({...newReview, comment: e.target.value})}
                     rows="3"
                     placeholder="Hãy chia sẻ cảm nhận của bạn về cuốn sách này..."
-                    style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #d1d5db", fontFamily: "inherit", outline: "none", resize: "vertical" }}
+                    className="review-form-textarea"
                     required
                   ></textarea>
                 </div>
 
-                <div style={{ marginBottom: "20px" }}>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}>Đính kèm hình ảnh (Tùy chọn):</label>
-                  <div style={{ display: "flex", gap: "15px", alignItems: "flex-start", flexWrap: "wrap" }}>
-                    <div style={{ position: "relative" }}>
-                      <input type="file" accept="image/*" onChange={handleImageUpload} id="review-image-upload" style={{ display: "none" }} />
-                      <label htmlFor="review-image-upload" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "80px", height: "80px", border: "2px dashed #d1d5db", borderRadius: "8px", cursor: "pointer", color: "#6b7280", background: "#fff", transition: "all 0.2s" }}>
-                        <span style={{ fontSize: "24px" }}>+</span>
-                      </label>
-                    </div>
-                    
-                    {uploadingImage && <div style={{ display: "flex", alignItems: "center", height: "80px", color: "#3b82f6", fontSize: "14px" }}>Đang tải ảnh lên...</div>}
-                    
-                    {newReview.image && (
-                      <div style={{ position: "relative", display: "inline-block" }}>
-                        <img src={newReview.image} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", border: "1px solid #d1d5db" }} />
-                        <button type="button" onClick={() => setNewReview({...newReview, image: ""})} style={{ position: "absolute", top: "-8px", right: "-8px", background: "#ef4444", color: "#fff", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", fontSize: "14px", lineHeight: "1", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>×</button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <button type="submit" disabled={submittingReview} style={{ padding: "12px 24px", background: "#10b981", color: "white", border: "none", borderRadius: "6px", cursor: submittingReview ? "not-allowed" : "pointer", fontWeight: "bold", fontSize: "15px", transition: "background 0.2s" }}>
+                <button type="submit" disabled={submittingReview} className="review-submit-btn">
                   {submittingReview ? "Đang gửi..." : "Gửi đánh giá"}
                 </button>
               </form>
@@ -319,39 +298,39 @@ const BookDetail = () => {
 
             <div className="review-list">
               {reviews.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "40px 20px", background: "#f9fafb", borderRadius: "12px", border: "1px dashed #d1d5db" }}>
-                  <span style={{ fontSize: "40px", display: "block", marginBottom: "10px" }}>📝</span>
-                  <p style={{ color: "#6b7280", margin: 0 }}>Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá truyện này!</p>
+                <div className="review-list-empty">
+                  <span className="review-empty-icon">📝</span>
+                  <p className="review-empty-text">Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá truyện này!</p>
                 </div>
               ) : (
         reviews.map(review => {
           // Xử lý an toàn cho review rating (bảo vệ trường hợp rating nằm ngoài khoảng mong muốn)
           const rValue = Math.max(0, Math.min(5, Number(review.rating) || 5));
           return (
-                    <div key={review.id} className="review-item" style={{ marginBottom: "25px", paddingBottom: "25px", borderBottom: "1px solid #e5e7eb" }}>
-                      <div className="review-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                          <div style={{ width: "40px", height: "40px", background: "#e5e7eb", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", color: "#6b7280", fontSize: "16px" }}>
+                    <div key={review.id} className="review-item-container">
+                      <div className="review-item-header">
+                        <div className="review-user-info">
+                          <div className="review-user-avatar">
                             {review.username.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <span className="reviewer" style={{ fontWeight: "bold", display: "block", color: "#1f2937" }}>{review.username}</span>
-                            <span className="stars" style={{ color: "#f59e0b", letterSpacing: "1px", fontSize: "14px" }}>
+                            <span className="review-user-name">{review.username}</span>
+                            <span className="review-user-stars">
                               {"★".repeat(rValue)}
                               {"☆".repeat(5 - rValue)}
                             </span>
                           </div>
                 </div>
-                        <span style={{ fontSize: "13px", color: "#9ca3af" }}>
+                        <span className="review-item-date">
                           {new Date(review.created_at).toLocaleDateString("vi-VN")}
                         </span>
               </div>
-                      <p style={{ margin: "0 0 15px 0", color: "#4b5563", lineHeight: "1.6" }}>{review.comment}</p>
+                      <p className="review-item-comment">{review.comment}</p>
                       
                       {review.image && (
-                        <div style={{ marginTop: "10px" }}>
+                        <div className="review-item-image-wrapper">
                           <a href={review.image} target="_blank" rel="noopener noreferrer">
-                            <img src={review.image} alt="Ảnh đánh giá" style={{ width: "120px", height: "120px", objectFit: "cover", borderRadius: "8px", border: "1px solid #e5e7eb", cursor: "zoom-in" }} />
+                            <img src={review.image} alt="Ảnh đánh giá" className="review-item-image" />
                           </a>
                         </div>
                       )}

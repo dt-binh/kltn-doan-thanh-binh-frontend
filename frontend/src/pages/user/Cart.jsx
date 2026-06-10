@@ -140,7 +140,7 @@ const Cart = () => {
                   <span>{total.toLocaleString()} ₫</span>
                 </div>
 
-                <Link to="/checkout" className="checkout-btn">
+                <Link to="/checkout" className="checkout-btn2">
                    Thanh toán
                 </Link>
               </div>

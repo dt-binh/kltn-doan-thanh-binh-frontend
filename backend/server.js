@@ -45,18 +45,6 @@ app.get("/", (req, res) => {
   res.send("API đang chạy...");
 });
 
-
-// ================= RESET ADMIN PASSWORD =================
-app.get("/api/reset-admin", async (req, res) => {
-  // Mã hoá mật khẩu "123456" chuẩn
-  const hash = await bcrypt.hash("123456", 10);
-  db.query("UPDATE users SET password = ? WHERE username = 'admin'", [hash], (err) => {
-    if (err) return res.status(500).json(err);
-    res.send("Đã reset mật khẩu tài khoản admin thành: 123456. Bạn có thể quay lại trang đăng nhập!");
-  });
-});
-
-
 // ================= REGISTER =================
 app.post("/api/register", async (req, res) => {
   try {

@@ -19,23 +19,11 @@ const Home = () => {
 
   // Lưu danh sách sách
   const [books, setBooks] = useState([]);
-
-  // Lưu danh sách thể loại
   const [genres, setGenres] = useState([]);
-
-  // Trang hiện tại của phân trang
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Chạy 1 lần khi component được render lần đầu
   useEffect(() => {
-
-    // Hàm lấy dữ liệu từ server
     const fetchData = async () => {
       try {
-
-        // Gọi đồng thời 2 API:
-        // 1. Danh sách sách
-        // 2. Danh sách thể loại
         const [booksRes, genresRes] = await Promise.all([
           axios.get("http://localhost:5000/api/books"),
           axios.get("http://localhost:5000/api/genres"),
@@ -53,15 +41,9 @@ const Home = () => {
         console.error("Lỗi lấy dữ liệu:", error);
       }
     };
-
-    // Gọi hàm lấy dữ liệu
     fetchData();
 
   }, []);
-
-  // =====================================================
-  // PHÂN TRANG DANH SÁCH SÁCH
-  // =====================================================
 
   // Mỗi trang hiển thị 8 cuốn sách
   const itemsPerPage = 8;
@@ -70,16 +52,10 @@ const Home = () => {
   const totalPages = Math.ceil(
     books.length / itemsPerPage
   );
-
-  // Vị trí cuối của dữ liệu trên trang hiện tại
   const indexOfLastItem =
     currentPage * itemsPerPage;
-
-  // Vị trí đầu của dữ liệu trên trang hiện tại
   const indexOfFirstItem =
     indexOfLastItem - itemsPerPage;
-
-  // Cắt mảng sách theo trang hiện tại
   const currentBooks = books.slice(
     indexOfFirstItem,
     indexOfLastItem
@@ -87,6 +63,9 @@ const Home = () => {
 
   return (
     <div className="home-page">
+
+      {/* Header */}
+
       <Header />
       <main className="home-main">
         <div className="home-banner">
@@ -102,7 +81,6 @@ const Home = () => {
             >
               Mua ngay
             </Link>
-
           </div>
         </div>
         <section className="home-categories">
@@ -135,32 +113,24 @@ const Home = () => {
                 </Link>
               ))}
             </div>
-
           </div>
         </section>
         <section className="home-featured">
-
           <div className="home-container">
 
             {/* Tiêu đề khu vực */}
             <div className="home-section-header">
-
               <h2>Truyện nổi bật</h2>
-
               <Link
                 to="/books"
                 className="home-view-all"
               >
                 Xem thêm →
               </Link>
-
             </div>
-
             {/* Danh sách sách */}
             <div className="home-books-grid">
-
               {currentBooks.map((book) => (
-
                 // Hiển thị từng cuốn sách
                 <BookCard
                   key={book.id}

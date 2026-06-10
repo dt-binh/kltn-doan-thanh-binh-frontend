@@ -7,17 +7,14 @@
     #ffd6e0
   );
 }
-
-/* Container RIÊNG cho Home */
 .home-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 18px;
 }
 
-/* ========================= */
 /* Banner */
-/* ========================= */
+
 .home-banner {
   width: 100%;
   height: 420px;

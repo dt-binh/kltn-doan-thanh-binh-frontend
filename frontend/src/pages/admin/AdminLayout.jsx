@@ -5,7 +5,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 
 // File CSS chứa giao diện
-import './AdminLayout.css';
+import './Dashboard.css';
 
 const AdminLayout = () => {
   // Hook dùng để chuyển trang

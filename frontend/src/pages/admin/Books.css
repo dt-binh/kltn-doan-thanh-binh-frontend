@@ -17,6 +17,7 @@
   margin: 0;
   color: #0f172a;
   font-weight: 700;
+  font-size: 20px;
 }
 
 .btn-add {
@@ -74,7 +75,7 @@
   color: #64748b;
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   letter-spacing: 0.05em;
 }
 
@@ -204,4 +205,8 @@
 .active-page {
   background: #3b82f6;
   color: white;
+}
+
+td.action-cell {
+  margin-top: 26px;
 }

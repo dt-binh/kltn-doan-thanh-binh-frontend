@@ -17,6 +17,7 @@
   margin: 0;
   color: #0f172a;
   font-weight: 700;
+  font-size: 20px;
 }
 
 .genres-btn-add {
@@ -30,10 +31,18 @@
   box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
   transition: all 0.2s ease;
 }
-.genres-btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 10px -1px rgba(79, 70, 229, 0.4); }
+.genres-btn-add:hover { 
+  transform: translateY(-2px); 
+  box-shadow: 0 6px 10px -1px rgba(79, 70, 229, 0.4);
+ }
 
-.genres-table-container { overflow-x: auto; }
-.genres-table { width: 100%; border-collapse: collapse; }
+.genres-table-container { 
+  overflow-x: auto; 
+}
+.genres-table { 
+  width: 100%; 
+  border-collapse: collapse; 
+}
 
 .genres-table th, .genres-table td {
   padding: 15px;
@@ -42,20 +51,58 @@
   color: #334155;
 }
 
-.genres-table th { background-color: #f8fafc; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; }
-.genres-table input {
-  width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; transition: all 0.2s ease;
+.genres-table th { 
+  background-color: #f8fafc; 
+  color: #64748b; 
+  font-weight: 600; 
+  text-transform: uppercase; 
+  font-size: 0.7rem; 
+  letter-spacing: 0.05em; 
 }
-.genres-table input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
-.add-row { background-color: #f0fdf4; }
-.action-cell { display: flex; gap: 8px; }
+
+.genres-table input {
+  width: 100%; 
+  padding: 10px 14px; 
+  border: 1px solid #cbd5e1; 
+  border-radius: 6px; 
+  outline: none; 
+  transition: all 0.2s ease;
+}
+.genres-table input:focus { 
+  border-color: #4f46e5; 
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); 
+}
+.add-row { 
+  background-color: #f0fdf4; 
+}
+.action-cell { 
+  display: flex; gap: 8px; 
+}
 
 /* Buttons */
 .btn-edit, .btn-save {
-  background-color: #eff6ff; color: #2563eb; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background-color 0.2s;
+  background-color: #eff6ff; 
+  color: #2563eb; 
+  border: none; 
+  padding: 8px 14px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  font-weight: 500; 
+  transition: background-color 0.2s;
 }
 .btn-delete, .btn-cancel {
-  background-color: #fef2f2; color: #dc2626; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background-color 0.2s;
+  background-color: #fef2f2; 
+  color: #dc2626; 
+  border: none; 
+  padding: 8px 14px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  font-weight: 500; 
+  transition: background-color 0.2s;
 }
-.btn-edit:hover, .btn-save:hover { background-color: #c7d2fe; }
-.btn-delete:hover, .btn-cancel:hover { background-color: #fecaca; }
+.btn-edit:hover, .btn-save:hover { 
+  background-color: #c7d2fe; 
+}
+.btn-delete:hover, .btn-cancel:hover { 
+  background-color: #fecaca; 
+}
