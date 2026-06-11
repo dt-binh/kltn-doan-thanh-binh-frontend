@@ -78,6 +78,8 @@ CREATE TABLE books (
     rating DECIMAL(3,2)
     DEFAULT 0,
 
+    stock INT DEFAULT 0,
+
     views INT DEFAULT 0,
 
     image VARCHAR(255),

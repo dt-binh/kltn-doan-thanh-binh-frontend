@@ -68,6 +68,7 @@ INSERT INTO books (
     genre_id,
     price,
     rating,
+    stock,
     views,
     image,
     description
@@ -79,6 +80,7 @@ VALUES
     5,
     150000,
     4.8,
+    100,
     120,
     'https://images.unsplash.com/photo-1611100481087-2eb79ea4cf83?w=300&h=450&fit=crop',
     'Cuốn sách kinh điển về cậu bé phù thủy Harry Potter.'
@@ -90,6 +92,7 @@ VALUES
     6,
     80000,
     4.5,
+    50,
     98,
     'https://via.placeholder.com/300x450/4F46E5/FFFFFF?text=Dế+Mèn',
     'Tác phẩm bất hủ của văn học Việt Nam.'
@@ -101,6 +104,7 @@ VALUES
     9,
     120000,
     4.7,
+    75,
     110,
     'https://via.placeholder.com/300x450/10B981/FFFFFF?text=Tuổi+Thơ',
     'Tác phẩm nổi tiếng của Nguyễn Nhật Ánh.'
@@ -112,6 +116,7 @@ VALUES
     5,
     250000,
     4.9,
+    200,
     220,
     'https://images.unsplash.com/photo-1603158047734-364f505d09e1?w=300&h=450&fit=crop',
     'Epic fantasy nổi tiếng thế giới.'
@@ -123,6 +128,7 @@ VALUES
     8,
     90000,
     4.6,
+    60,
     76,
     'https://via.placeholder.com/300x450/F59E0B/FFFFFF?text=Đắc+Nhân+Tâm',
     'Kinh điển phát triển bản thân.'
@@ -134,6 +140,7 @@ VALUES
     9,
     65000,
     4.4,
+    30,
     64,
     'https://via.placeholder.com/300x450/EF4444/FFFFFF?text=Số+Đỏ',
     'Tiểu thuyết hiện thực phê phán.'
@@ -145,6 +152,7 @@ VALUES
     7,
     110000,
     4.7,
+    120,
     88,
     'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=300&h=450&fit=crop',
     'Dystopian classic nổi tiếng.'

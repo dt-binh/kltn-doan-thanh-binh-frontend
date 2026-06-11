@@ -327,6 +327,7 @@ app.get("/api/admin/stats", verifyToken, async (req, res) => {
   if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền" });
 
   try {
+    //hàm hỗ trợ để thực hiện truy vấn đếm số lượng bản ghi cho từng bảng
     const getCount = (query) => new Promise((resolve, reject) => {
       db.query(query, (err, result) => {
         if (err) reject(err);
@@ -353,7 +354,7 @@ app.get("/api/admin/stats", verifyToken, async (req, res) => {
         else resolve(result);
       });
     });
-
+    //lấy số lượng người dùng, sách, đơn hàng và tổng doanh thu từ cơ sở dữ liệu, đồng thời tính doanh thu theo tháng trong năm hiện tại để hiển thị biểu đồ trên dashboard admin
     const usersCount = await getCount("SELECT COUNT(*) as count FROM users WHERE role = 'user'");
     const booksCount = await getCount("SELECT COUNT(*) as count FROM books");
     const ordersCount = await getCount("SELECT COUNT(*) as count FROM orders");
@@ -364,7 +365,7 @@ app.get("/api/admin/stats", verifyToken, async (req, res) => {
     monthlyRevenueData.forEach(item => {
       revenueByMonth[item.month - 1] = Number(item.revenue) || 0;
     });
-
+    //trả kq cho fe
     res.json({
       users: usersCount,
       books: booksCount,
@@ -502,10 +503,10 @@ app.post("/api/books/:id/reviews", verifyToken, (req, res) => {
 app.post("/api/books", verifyToken, (req, res) => {
   if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
   
-  const { title, author_id, genre_id, price, image, description } = req.body;
-  const sql = "INSERT INTO books (title, author_id, genre_id, price, image, description) VALUES (?, ?, ?, ?, ?, ?)";
+  const { title, author_id, genre_id, price, stock, image, description } = req.body;
+  const sql = "INSERT INTO books (title, author_id, genre_id, price, stock, image, description) VALUES (?, ?, ?, ?, ?, ?, ?)";
   
-  db.query(sql, [title, author_id, genre_id, price, image, description], (err, result) => {
+  db.query(sql, [title, author_id, genre_id, price, stock || 0, image, description], (err, result) => {
     if (err) return res.status(500).json(err);
     res.status(201).json({ message: "Thêm sách thành công", id: result.insertId });
   });
@@ -516,10 +517,10 @@ app.put("/api/books/:id", verifyToken, (req, res) => {
   if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
   
   const { id } = req.params;
-  const { title, author_id, genre_id, price, image, description } = req.body;
-  const sql = "UPDATE books SET title=?, author_id=?, genre_id=?, price=?, image=?, description=? WHERE id=?";
+  const { title, author_id, genre_id, price, stock, image, description } = req.body;
+  const sql = "UPDATE books SET title=?, author_id=?, genre_id=?, price=?, stock=?, image=?, description=? WHERE id=?";
   
-  db.query(sql, [title, author_id, genre_id, price, image, description, id], (err) => {
+  db.query(sql, [title, author_id, genre_id, price, stock || 0, image, description, id], (err) => {
     if (err) return res.status(500).json(err);
     res.json({ message: "Cập nhật sách thành công" });
   });
@@ -635,7 +636,7 @@ app.delete("/api/users/:id", verifyToken, (req, res) => {
 // ================= CART =================
 app.get("/api/cart", verifyToken, (req, res) => {
   const sql = `
-    SELECT cart_items.id, cart_items.quantity, books.id AS book_id, books.title, books.price, books.image
+    SELECT cart_items.id, cart_items.quantity, books.id AS book_id, books.title, books.price, books.image, books.stock
     FROM cart_items
     JOIN books ON cart_items.book_id = books.id
     WHERE cart_items.user_id = ?
@@ -651,23 +652,33 @@ app.post("/api/cart", verifyToken, (req, res) => {
   const { book_id, quantity = 1 } = req.body;
   const user_id = req.user.id;
 
-  const checkSql = "SELECT * FROM cart_items WHERE user_id = ? AND book_id = ?";
-  db.query(checkSql, [user_id, book_id], (err, result) => {
+  db.query("SELECT stock FROM books WHERE id = ?", [book_id], (err, bookRes) => {
     if (err) return res.status(500).json(err);
+    if (bookRes.length === 0) return res.status(404).json({ message: "Không tìm thấy sách" });
+    
+    const stock = bookRes[0].stock;
 
-    if (result.length > 0) {
-      const updateSql = "UPDATE cart_items SET quantity = quantity + ? WHERE id = ?";
-      db.query(updateSql, [quantity, result[0].id], (err) => {
-        if (err) return res.status(500).json(err);
-        res.json({ message: "Đã cập nhật số lượng trong giỏ hàng" });
-      });
-    } else {
-      const insertSql = "INSERT INTO cart_items (user_id, book_id, quantity) VALUES (?, ?, ?)";
-      db.query(insertSql, [user_id, book_id, quantity], (err) => {
-        if (err) return res.status(500).json(err);
-        res.status(201).json({ message: "Đã thêm vào giỏ hàng" });
-      });
-    }
+    const checkSql = "SELECT * FROM cart_items WHERE user_id = ? AND book_id = ?";
+    db.query(checkSql, [user_id, book_id], (err, result) => {
+      if (err) return res.status(500).json(err);
+  
+      if (result.length > 0) {
+        const newQuantity = result[0].quantity + quantity;
+        if (newQuantity > stock) return res.status(400).json({ message: "Số lượng trong kho không đủ" });
+        const updateSql = "UPDATE cart_items SET quantity = ? WHERE id = ?";
+        db.query(updateSql, [newQuantity, result[0].id], (err) => {
+          if (err) return res.status(500).json(err);
+          res.json({ message: "Đã cập nhật số lượng trong giỏ hàng" });
+        });
+      } else {
+        if (quantity > stock) return res.status(400).json({ message: "Số lượng trong kho không đủ" });
+        const insertSql = "INSERT INTO cart_items (user_id, book_id, quantity) VALUES (?, ?, ?)";
+        db.query(insertSql, [user_id, book_id, quantity], (err) => {
+          if (err) return res.status(500).json(err);
+          res.status(201).json({ message: "Đã thêm vào giỏ hàng" });
+        });
+      }
+    });
   });
 });
 
@@ -723,7 +734,7 @@ app.post("/api/orders", verifyToken, (req, res) => {
 
   // 1. Lấy thông tin giỏ hàng của user kèm giá sách
   const cartSql = `
-    SELECT c.book_id, c.quantity, b.price
+    SELECT c.book_id, c.quantity, b.price, b.stock, b.title
     FROM cart_items c
     JOIN books b ON c.book_id = b.id
     WHERE c.user_id = ?
@@ -733,6 +744,13 @@ app.post("/api/orders", verifyToken, (req, res) => {
     if (err) return res.status(500).json(err);
     if (cartItems.length === 0) {
       return res.status(400).json({ message: "Giỏ hàng của bạn đang trống" });
+    }
+
+    // Kiểm tra số lượng tồn kho trước khi đặt hàng
+    for (let item of cartItems) {
+      if (item.quantity > item.stock) {
+        return res.status(400).json({ message: `Truyện "${item.title}" chỉ còn ${item.stock} quyển trong kho. Vui lòng cập nhật lại giỏ hàng!` });
+      }
     }
 
     // 2. Tính tổng tiền
@@ -760,10 +778,22 @@ app.post("/api/orders", verifyToken, (req, res) => {
         db.query(clearCartSql, [user_id], (err) => {
           if (err) return res.status(500).json(err);
 
-          res.status(201).json({
-            message: "Đặt hàng thành công",
-            order_id: order_id
+          // 6. Trừ số lượng sách trong kho
+          let completedUpdates = 0;
+          cartItems.forEach(item => {
+            db.query("UPDATE books SET stock = GREATEST(stock - ?, 0) WHERE id = ?", [item.quantity, item.book_id], () => {
+              completedUpdates++;
+              if (completedUpdates === cartItems.length) {
+                res.status(201).json({
+                  message: "Đặt hàng thành công",
+                  order_id: order_id
+                });
+              }
+            });
           });
+          if (cartItems.length === 0) {
+            res.status(201).json({ message: "Đặt hàng thành công", order_id });
+          }
         });
       });
     });
@@ -932,7 +962,19 @@ app.put("/api/orders/:id/status", verifyToken, (req, res) => {
     const sql = "UPDATE orders SET status = ? WHERE id = ?";
     db.query(sql, [status, id], (updateErr, result) => {
       if (updateErr) return res.status(500).json(updateErr);
-      res.json({ message: "Cập nhật trạng thái đơn hàng thành công" });
+
+      if (status === 'Đã hủy') {
+        db.query("SELECT book_id, quantity FROM order_items WHERE order_id = ?", [id], (err, items) => {
+          if (!err && items.length > 0) {
+            items.forEach(item => {
+              db.query("UPDATE books SET stock = stock + ? WHERE id = ?", [item.quantity, item.book_id]);
+            });
+          }
+          res.json({ message: "Cập nhật trạng thái đơn hàng thành công" });
+        });
+      } else {
+        res.json({ message: "Cập nhật trạng thái đơn hàng thành công" });
+      }
     });
   });
 });
@@ -956,6 +998,10 @@ app.post("/api/orders/:id/cancel-checkout", verifyToken, (req, res) => {
           
           db.query("DELETE FROM order_items WHERE order_id = ?", [id], (err) => {
             db.query("DELETE FROM orders WHERE id = ?", [id], (err) => {
+              // Khôi phục số lượng kho khi khách hàng bỏ qua thanh toán QR
+              items.forEach(item => {
+                db.query("UPDATE books SET stock = stock + ? WHERE id = ?", [item.quantity, item.book_id]);
+              });
               res.json({ message: "Đã hủy giao dịch và khôi phục giỏ hàng" });
             });
           });

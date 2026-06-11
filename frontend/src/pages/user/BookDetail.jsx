@@ -72,7 +72,7 @@ const BookDetail = () => {
         navigate("/login");
       } else {
         console.error("Lỗi thêm giỏ hàng:", error);
-        alert("Có lỗi xảy ra khi thêm vào giỏ hàng");
+        alert(error.response?.data?.message || "Có lỗi xảy ra khi thêm vào giỏ hàng");
       }
     }
   };
@@ -199,6 +199,7 @@ const BookDetail = () => {
 
               <div className="price-section">
           <div className="price">{(book.price || 0).toLocaleString()} ₫</div>
+          <div className="kho">Kho: {book.stock || 0}</div>
 
                 <div className="quantity">
                   <label>Số lượng:</label>
@@ -209,15 +210,16 @@ const BookDetail = () => {
                       -
                     </button>
                     <span>{quantity}</span>
-                    <button onClick={() => setQuantity(quantity + 1)}>+</button>
+                    <button onClick={() => setQuantity(Math.min(book.stock || 1, quantity + 1))}>+</button>
                   </div>
                 </div>
 
                 <button
                   onClick={addToCart}
-                  className={`add-cart-btn ${added ? "added" : ""}`}
+                  disabled={book.stock <= 0}
+                  className={`add-cart-btn ${added ? "added" : ""} ${book.stock <= 0 ? "disabled" : ""}`}
                 >
-                  {added ? "✅ Đã thêm" : "Thêm vào giỏ hàng"}
+                  {book.stock <= 0 ? "Hết hàng" : added ? "✅ Đã thêm" : "Thêm vào giỏ hàng"}
                 </button>
               </div>
             </div>

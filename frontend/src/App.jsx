@@ -15,6 +15,7 @@ import Genres from "./pages/admin/Genres"
 import Authors from "./pages/admin/Authors"
 import Orders from "./pages/admin/Orders"
 import UserOrders from "./pages/admin/UserOrders"
+
 import "./App.css"
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
             <Route path="genres" element={<Genres />} />
             <Route path="authors" element={<Authors />} />
             <Route path="orders" element={<Orders />} />
+            
           </Route>
 
         </Routes>

@@ -40,6 +40,8 @@ const Checkout = () => {
     0
   );
 
+  const hasOutOfStock = cartItems.some(item => item.quantity > item.stock);
+
   const handleCheckout = async () => {
     if (cartItems.length === 0) return alert("Giỏ hàng trống!");
     
@@ -68,7 +70,7 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error("Lỗi đặt hàng:", error);
-      alert("Đặt hàng thất bại. Vui lòng thử lại.");
+      alert(error.response?.data?.message || "Đặt hàng thất bại. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -165,6 +167,9 @@ const Checkout = () => {
     <>
       <Header />
       <main className="checkout-page">
+        <button className="back-btn" onClick={() => navigate(-1)}>
+          ← Quay lại
+        </button>
         <h2 className="checkout-title">
           Thanh toán đơn hàng
         </h2>
@@ -212,10 +217,16 @@ const Checkout = () => {
               </label>
             </div>
 
+            {hasOutOfStock && (
+              <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '10px' }}>
+                Có sản phẩm vượt quá số lượng trong kho. Vui lòng quay lại giỏ hàng để kiểm tra!
+              </p>
+            )}
             <button
               onClick={handleCheckout}
-              disabled={loading || cartItems.length === 0}
+              disabled={loading || cartItems.length === 0 || hasOutOfStock}
               className="checkout-btn"
+              style={hasOutOfStock ? { background: '#ccc', cursor: 'not-allowed' } : {}}
             >
               {loading ? "Đang xử lý..." : "Xác nhận & Đặt hàng"}
             </button>

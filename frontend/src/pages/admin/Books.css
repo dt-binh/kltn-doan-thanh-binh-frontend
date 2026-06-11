@@ -83,7 +83,7 @@
 .books-table input[type="number"],
 .books-table select {
   width: 100%;
-  padding: 10px 14px;
+  padding: 8px 10px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   outline: none;
@@ -113,6 +113,7 @@
 .action-wrapper {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   min-height: 40px;
 }
@@ -124,7 +125,7 @@
 .btn-delete,
 .btn-cancel {
   border: none;
-  padding: 8px 14px;
+  padding: 8px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
@@ -135,7 +136,7 @@
   justify-content: center;
   gap: 4px;
 
-  min-width: 82px;
+  min-width: 36px;
   min-height: 36px;
 
   line-height: 1;
@@ -164,6 +165,15 @@
   background-color: #fecaca;
 }
 
+.btn-import {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+
+.btn-import:hover {
+  background-color: #d1fae5;
+}
+
 .books-table img {
   display: block;
 }
@@ -173,6 +183,47 @@
   flex-direction: column;
   gap: 6px;
 }
+
+.image-upload-inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.flex-input {
+  flex: 1;
+  max-width: none !important;
+}
+
+.upload-label-inline {
+  margin-bottom: 0;
+}
+
+.image-upload-box input[type="text"] {
+  max-width: 120px; /* Giới hạn chiều rộng để không đẩy các nút thao tác */
+  font-size: 0.8rem;
+}
+
+.file-upload-label {
+  display: inline-block;
+  padding: 6px 10px;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #475569;
+  text-align: center;
+  transition: all 0.2s;
+  max-width: 120px;
+  box-sizing: border-box;
+}
+
+.file-upload-label:hover {
+  background-color: #e2e8f0;
+  border-color: #94a3b8;
+}
+
 .book-thumbnail {
   width: 45px;
   height: 65px;
@@ -207,6 +258,104 @@
   color: white;
 }
 
+th.col-action,
 td.action-cell {
-  margin-top: 26px;
+  width: 120px;
+  text-align: center;
+}
+
+.col-stock {
+  width: 150px;
+  min-width: 120px;
+}
+
+.col-image {
+  width: 140px;
+  max-width: 140px;
+  overflow: hidden;
+}
+
+/* =========================
+   MODAL
+========================= */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #0f172a;
+  font-size: 1.25rem;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  outline: none;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.hidden-input {
+  display: none;
+}
+
+.form-group input:disabled {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
 }

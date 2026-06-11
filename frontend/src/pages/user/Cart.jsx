@@ -35,6 +35,7 @@ const Cart = () => {
           title: item.title,
           price: item.price,
           image: item.image,
+          stock: item.stock,
         },
       }));
       setCartItems(formattedItems);
@@ -51,7 +52,7 @@ const Cart = () => {
     if (newQty < 1) return;
     const item = cartItems.find((i) => i.id === itemId);
     if (!item) return;
-
+    //tính số lg chênh lệch (2->3)
     const diff = newQty - item.quantity;
     if (diff === 0) return;
 
@@ -62,9 +63,13 @@ const Cart = () => {
         { book_id: item.book.id, quantity: diff },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      //tải lại giỏ hàng để tính tổng mới
       fetchCart();
     } catch (error) {
       console.error("Lỗi cập nhật số lượng:", error);
+      if (error.response?.data?.message) {
+        alert(error.response.data.message);
+      }
     }
   };
 
@@ -79,11 +84,13 @@ const Cart = () => {
       console.error("Lỗi xóa sản phẩm:", error);
     }
   };
-
+  //tính tổng tiền của giỏ hàng, sau đó hiển thị trong phần tóm tắt thanh toán
   const total = cartItems.reduce(
     (sum, item) => sum + item.book.price * item.quantity,
     0
   );
+
+  const hasOutOfStock = cartItems.some(item => item.quantity > item.book.stock);
 
   return (
     <>
@@ -113,12 +120,18 @@ const Cart = () => {
             <div className="cart-layout">
               <div className="cart-list">
                 {cartItems.map((item) => (
-                  <CartItem
-                    key={item.id}
-                    item={item}
-                    updateQuantity={updateQuantity}
-                    removeItem={removeItem}
-                  />
+                  <div key={item.id}>
+                    <CartItem
+                      item={item}
+                      updateQuantity={updateQuantity}
+                      removeItem={removeItem}
+                    />
+                    {item.quantity > item.book.stock && (
+                      <p style={{ color: 'red', fontSize: '0.85rem', marginLeft: '120px', marginTop: '-15px', marginBottom: '15px' }}>
+                        * Trong kho chỉ còn {item.book.stock} quyển. Vui lòng giảm số lượng.
+                      </p>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -140,9 +153,17 @@ const Cart = () => {
                   <span>{total.toLocaleString()} ₫</span>
                 </div>
 
-                <Link to="/checkout" className="checkout-btn2">
-                   Thanh toán
-                </Link>
+                {hasOutOfStock && (
+                  <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '10px', textAlign: 'center' }}>
+                    Vui lòng giảm số lượng sản phẩm bị quá tải trước khi thanh toán.
+                  </p>
+                )}
+
+                {hasOutOfStock ? (
+                  <button className="checkout-btn2" disabled style={{ background: '#ccc', cursor: 'not-allowed' }}>Thanh toán</button>
+                ) : (
+                  <Link to="/checkout" className="checkout-btn2">Thanh toán</Link>
+                )}
               </div>
             </div>
           )}

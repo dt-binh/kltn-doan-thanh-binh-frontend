@@ -295,7 +295,7 @@ const Profile = () => {
                     </div>
                     
                     {expandedOrder === order.id && (
-                     <div className="order-details-dropdown">
+                      <div className="order-details-dropdown">
                         {detailsLoading ? <p style={{ margin: 0 }}>Đang tải chi tiết...</p> : (
                           <div className="order-details-container">
                             <h4 className="order-details-title">

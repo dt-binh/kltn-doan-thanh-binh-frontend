@@ -29,21 +29,19 @@ const Books = () => {
   const [genres, setGenres] = useState([]);
   const [authors, setAuthors] = useState([]);
 
-  // EDIT
-  const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({});
-
-  // ADD
-  const [isAdding, setIsAdding] = useState(false);
-
-  const [newBook, setNewBook] = useState({
+  // MODAL STATES
+  const [modalType, setModalType] = useState(null); // 'add' | 'edit' | 'import'
+  const [formData, setFormData] = useState({
+    id: null,
     title: "",
     author_id: "",
     genre_id: "",
     price: 0,
+    stock: 0,
     image: "",
     description: "",
   });
+  const [importAmount, setImportAmount] = useState(0);
 
   const token = localStorage.getItem("token");
 
@@ -97,66 +95,85 @@ const Books = () => {
     fetchData();
   }, []);
 
-  // ================= EDIT =================
+  // ================= MODAL ACTIONS =================
 
-  const handleEdit = (book) => {
-    setEditingId(book.id);
-
-    setEditData({
-      title: book.title,
-      author_id: book.author_id,
-      genre_id: book.genre_id,
-      price: book.price,
-      image: book.image,
-      description: book.description,
-    });
+  const openModal = (type, book = null) => {
+    setModalType(type);
+    if (book) {
+      setFormData({ ...book });
+    } else {
+      setFormData({
+        id: null,
+        title: "",
+        author_id: "",
+        genre_id: "",
+        price: 0,
+        stock: 0,
+        image: "",
+        description: "",
+      });
+    }
+    setImportAmount(0);
   };
 
-  const handleEditChange = (e) => {
-    setEditData({
-      ...editData,
+  const closeModal = () => {
+    setModalType(null);
+  };
+
+  const handleFormChange = (e) => {
+    setFormData({
+      ...formData,
       [e.target.name]: e.target.value,
     });
   };
 
-  const handleSave = async () => {
-    try {
-      await axios.put(
-        `http://localhost:5000/api/books/${editingId}`,
-        editData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+  const handleSaveBook = async () => {
+    if (!formData.title) return alert("Nhập tiêu đề!");
+    if (!formData.author_id) return alert("Chọn tác giả!");
+    if (!formData.genre_id) return alert("Chọn thể loại!");
 
-      setEditingId(null);
+    try {
+      if (modalType === "add") {
+        await axios.post("http://localhost:5000/api/books", formData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else if (modalType === "edit") {
+        await axios.put(`http://localhost:5000/api/books/${formData.id}`, formData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+      closeModal();
       fetchData();
     } catch (error) {
-      console.error("Lỗi cập nhật sách", error);
-      alert("Cập nhật thất bại");
+      console.error("Lỗi lưu sách", error);
+      alert("Lưu thất bại");
     }
   };
 
-  const handleCancel = () => {
-    setEditingId(null);
-  };
+  const handleSaveImport = async () => {
+    if (importAmount <= 0) return alert("Số lượng nhập phải lớn hơn 0");
 
-  // ================= DELETE =================
+    const updatedStock = Number(formData.stock) + Number(importAmount);
+    const payload = { ...formData, stock: updatedStock };
+
+    try {
+      await axios.put(`http://localhost:5000/api/books/${formData.id}`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      closeModal();
+      fetchData();
+    } catch (error) {
+      console.error("Lỗi nhập hàng", error);
+      alert("Nhập hàng thất bại");
+    }
+  };
 
   const handleDelete = async (id) => {
     if (window.confirm("Xóa truyện này?")) {
       try {
-        await axios.delete(
-          `http://localhost:5000/api/books/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
+        await axios.delete(`http://localhost:5000/api/books/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         fetchData();
       } catch (error) {
         console.error("Lỗi xóa sách", error);
@@ -164,52 +181,9 @@ const Books = () => {
     }
   };
 
-  // ================= ADD =================
-
-  const handleAddChange = (e) => {
-    setNewBook({
-      ...newBook,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleAdd = async () => {
-    if (!newBook.title) return alert("Nhập tiêu đề!");
-    if (!newBook.author_id) return alert("Chọn tác giả!");
-    if (!newBook.genre_id) return alert("Chọn thể loại!");
-
-    try {
-      await axios.post(
-        "http://localhost:5000/api/books",
-        newBook,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setIsAdding(false);
-
-      setNewBook({
-        title: "",
-        author_id: "",
-        genre_id: "",
-        price: 0,
-        image: "",
-        description: "",
-      });
-
-      fetchData();
-    } catch (error) {
-      console.error("Lỗi thêm sách", error);
-      alert("Thêm thất bại");
-    }
-  };
-
   // ================= UPLOAD IMAGE =================
 
-  const handleImageUpload = async (e, isEditing) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
 
     if (!file) return;
@@ -231,17 +205,7 @@ const Books = () => {
 
       const imageUrl = res.data.imageUrl;
 
-      if (isEditing) {
-        setEditData({
-          ...editData,
-          image: imageUrl,
-        });
-      } else {
-        setNewBook({
-          ...newBook,
-          image: imageUrl,
-        });
-      }
+      setFormData((prev) => ({ ...prev, image: imageUrl }));
     } catch (error) {
       console.error("Lỗi tải ảnh lên:", error);
       alert("Tải ảnh thất bại!");
@@ -256,7 +220,7 @@ const Books = () => {
 
         <button
           className="btn-add"
-          onClick={() => setIsAdding(!isAdding)}
+          onClick={() => openModal('add')}
         >
           ➕ Thêm truyện
         </button>
@@ -272,244 +236,27 @@ const Books = () => {
               <th>Tác giả</th>
               <th>Thể loại</th>
               <th>Giá</th>
+              <th className="col-stock">Số lượng</th>
               <th>Hình ảnh</th>
-              <th>Lượt xem</th>
-              <th>Hành động</th>
+              <th className="col-action">Hành động</th>
             </tr>
           </thead>
 
           <tbody>
-            {/* ADD ROW */}
-            {isAdding && (
-              <tr className="add-row">
-                <td>--</td>
-                <td>
-                  <input
-                    name="title"
-                    placeholder="Nhập tiêu đề"
-                    value={newBook.title}
-                    onChange={handleAddChange}
-                  />
-                </td>
-                <td>
-                  <select
-                    name="author_id"
-                    value={newBook.author_id}
-                    onChange={handleAddChange}
-                  >
-                    <option value="">Chọn tác giả</option>
-                    {authors.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <select
-                    name="genre_id"
-                    value={newBook.genre_id}
-                    onChange={handleAddChange}
-                  >
-                    <option value="">Chọn thể loại</option>
-                    {genres.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    name="price"
-                    placeholder="Giá"
-                    value={newBook.price}
-                    onChange={handleAddChange}
-                  />
-                </td>
-                <td>
-                  <div className="image-upload-box">
-                    <input
-                      type="text"
-                      name="image"
-                      placeholder="URL ảnh"
-                      value={newBook.image}
-                      onChange={handleAddChange}
-                    />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, false)}
-                    />
-                  </div>
-                </td>
-                <td>0</td>
-                <td className="action-cell">
-                  <div className="action-wrapper">
-                    <button className="btn-save" onClick={handleAdd}>
-                      💾 Lưu
-                    </button>
-                    <button
-                      className="btn-cancel"
-                      onClick={() => setIsAdding(false)}
-                    >
-                      ❌ Hủy
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            )}
-
             {currentBooks.map((book) => (
               <tr key={book.id}>
                 <td>{book.id}</td>
-
-                <td>
-                  {editingId === book.id ? (
-                    <input
-                      name="title"
-                      value={editData.title}
-                      onChange={handleEditChange}
-                    />
-                  ) : (
-                    book.title
-                  )}
-                </td>
-
-                <td>
-                  {editingId === book.id ? (
-                    <select
-                      name="author_id"
-                      value={editData.author_id}
-                      onChange={handleEditChange}
-                    >
-                      <option value="">
-                        Chọn tác giả
-                      </option>
-
-                      {authors.map((a) => (
-                        <option
-                          key={a.id}
-                          value={a.id}
-                        >
-                          {a.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    book.author_name
-                  )}
-                </td>
-
-                <td>
-                  {editingId === book.id ? (
-                    <select
-                      name="genre_id"
-                      value={editData.genre_id}
-                      onChange={handleEditChange}
-                    >
-                      <option value="">
-                        Chọn thể loại
-                      </option>
-
-                      {genres.map((g) => (
-                        <option
-                          key={g.id}
-                          value={g.id}
-                        >
-                          {g.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    book.genre_name
-                  )}
-                </td>
-
-                <td>
-                  {editingId === book.id ? (
-                    <input
-                      type="number"
-                      name="price"
-                      value={editData.price}
-                      onChange={handleEditChange}
-                    />
-                  ) : (
-                    `${book.price.toLocaleString()} ₫`
-                  )}
-                </td>
-
-                <td>
-                  {editingId === book.id ? (
-                    <div className="image-upload-box">
-                      <input
-                        type="text"
-                        name="image"
-                        value={editData.image}
-                        onChange={handleEditChange}
-                        placeholder="URL ảnh"
-                      />
-
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                          handleImageUpload(e, true)
-                        }
-                      />
-                    </div>
-                  ) : (
-                    <BookImage
-                      src={book.image}
-                      alt={book.title}
-                    />
-                  )}
-                </td>
-
-                <td>
-                  {book.views || 0}
-                </td>
-
+                <td>{book.title}</td>
+                <td>{book.author_name}</td>
+                <td>{book.genre_name}</td>
+                <td>{`${book.price.toLocaleString()} ₫`}</td>
+                <td>{book.stock || 0}</td>
+                <td><BookImage src={book.image} alt={book.title} /></td>
                 <td className="action-cell">
                   <div className="action-wrapper">
-                    {editingId === book.id ? (
-                      <>
-                        <button
-                          className="btn-save"
-                          onClick={handleSave}
-                        >
-                          💾 Lưu
-                        </button>
-
-                        <button
-                          className="btn-cancel"
-                          onClick={handleCancel}
-                        >
-                          ❌ Hủy
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          className="btn-edit"
-                          onClick={() =>
-                            handleEdit(book)
-                          }
-                        >
-                          ✏️ Sửa
-                        </button>
-
-                        <button
-                          className="btn-delete"
-                          onClick={() =>
-                            handleDelete(book.id)
-                          }
-                        >
-                          🗑 Xóa
-                        </button>
-                      </>
-                    )}
+                    <button className="btn-edit" onClick={() => openModal('edit', book)} title="Sửa">✏️</button>
+                    <button className="btn-import" onClick={() => openModal('import', book)} title="Nhập hàng">📦</button>
+                    <button className="btn-delete" onClick={() => handleDelete(book.id)} title="Xóa">🗑</button>
                   </div>
                 </td>
               </tr>
@@ -548,6 +295,110 @@ const Books = () => {
           Sau &raquo;
         </button>
       </div>
+
+      {/* MODALS */}
+      {modalType && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            {modalType === 'import' ? (
+              <>
+                <div className="modal-header">
+                  <h3>Nhập hàng: {formData.title}</h3>
+                </div>
+                <div className="form-group">
+                  <label>Tồn kho hiện tại</label>
+                  <input type="number" value={formData.stock} disabled />
+                </div>
+                <div className="form-group">
+                  <label>Số lượng nhập thêm</label>
+                  <input
+                    type="number"
+                    value={importAmount}
+                    onChange={(e) => setImportAmount(e.target.value)}
+                    min="1"
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button className="btn-save" onClick={handleSaveImport}>Xác nhận</button>
+                  <button className="btn-cancel" onClick={closeModal}>Hủy</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="modal-header">
+                  <h3>{modalType === 'add' ? "Thêm truyện mới" : "Sửa thông tin truyện"}</h3>
+                </div>
+                <div className="form-group">
+                  <label>Tiêu đề</label>
+                  <input name="title" value={formData.title} onChange={handleFormChange} />
+                </div>
+                <div className="form-group">
+                  <label>Tác giả</label>
+                  <select name="author_id" value={formData.author_id} onChange={handleFormChange}>
+                    <option value="">Chọn tác giả</option>
+                    {authors.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Thể loại</label>
+                  <select name="genre_id" value={formData.genre_id} onChange={handleFormChange}>
+                    <option value="">Chọn thể loại</option>
+                    {genres.map((g) => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Giá</label>
+                  <input type="number" name="price" value={formData.price} onChange={handleFormChange} />
+                </div>
+                <div className="form-group">
+                  <label>Số lượng {modalType === 'edit' && "(Không thể sửa trực tiếp)"}</label>
+                  <input
+                    type="number"
+                    name="stock"
+                    value={formData.stock}
+                    onChange={handleFormChange}
+                    disabled={modalType === 'edit'}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Hình ảnh</label>
+                  <div className="image-upload-box" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="text"
+                      name="image"
+                      value={formData.image}
+                      onChange={handleFormChange}
+                      placeholder="URL ảnh"
+                      style={{ flex: 1, maxWidth: 'none' }}
+                    />
+                    <label className="file-upload-label" style={{ marginBottom: 0 }}>
+                      📁 Chọn ảnh
+                      <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
+                    </label>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Mô tả</label>
+                  <textarea
+                    name="description"
+                    value={formData.description || ""}
+                    onChange={handleFormChange}
+                    rows="3"
+                  ></textarea>
+                </div>
+                <div className="modal-actions">
+                  <button className="btn-save" onClick={handleSaveBook}>💾 Lưu</button>
+                  <button className="btn-cancel" onClick={closeModal}>❌ Hủy</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
