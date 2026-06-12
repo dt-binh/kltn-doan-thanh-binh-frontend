@@ -59,7 +59,7 @@ const BookDetail = () => {
     try {
       await axios.post(
         "http://localhost:5000/api/cart",
-        { book_id: id, quantity },
+        { book_id: id, quantity: Number(quantity) || 1 },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setAdded(true);
@@ -205,12 +205,40 @@ const BookDetail = () => {
                   <label>Số lượng:</label>
                   <div className="qty-controls">
                     <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      onClick={() => setQuantity(Math.max(1, (Number(quantity) || 1) - 1))}
                     >
                       -
                     </button>
-                    <span>{quantity}</span>
-                    <button onClick={() => setQuantity(Math.min(book.stock || 1, quantity + 1))}>+</button>
+                    <input
+                      type="number"
+                      min="1"
+                      max={book.stock || 1}
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "") setQuantity("");
+                        else {
+                          const num = parseInt(val, 10);
+                          if (!isNaN(num)) {
+                            if (num > (book.stock || 1)) {
+                              alert(`Trong kho chỉ còn ${book.stock || 0} quyển!`);
+                            }
+                            setQuantity(num);
+                          }
+                        }
+                      }}
+                      onBlur={() => {
+                        if (quantity === "" || quantity < 1) setQuantity(1);
+                      }}
+                      className="qty-input"
+                    />
+                    <button onClick={() => {
+                      const nextVal = (Number(quantity) || 1) + 1;
+                      if (nextVal > (book.stock || 1)) {
+                        alert(`Trong kho chỉ còn ${book.stock || 0} quyển!`);
+                      }
+                      setQuantity(nextVal);
+                    }}>+</button>
                   </div>
                 </div>
 

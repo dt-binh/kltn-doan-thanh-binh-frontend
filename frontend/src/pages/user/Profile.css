@@ -483,6 +483,7 @@
 }
 
 .pagination-number.active {
-  background: #3b82f6;
-  color: #fff;
+  background: #ff4d6d !important;
+  border-color: #ff4d6d !important;
+  color: #fff !important;
 }

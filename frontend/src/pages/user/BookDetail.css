@@ -175,13 +175,22 @@
   color: #ff4d6d;
 }
 
-.qty-controls span {
-  width: 50px;
+.qty-input {
+  width: 60px;
   text-align: center;
-
-  font-size: 14px;
+  border: none;
+  font-size: 15px;
   font-weight: 800;
   color: #111827;
+  outline: none;
+  -moz-appearance: textfield; /* Ẩn mũi tên trên Firefox */
+}
+
+/* Ẩn mũi tên trên Chrome, Safari, Edge, Opera */
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* Add cart */

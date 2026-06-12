@@ -317,6 +317,7 @@
 }
 
 .home-pagination-active {
-  background-color: #3b82f6;
-  color: #fff;
+  background-color: #ff4d6d !important;
+  border-color: #ff4d6d !important;
+  color: #fff !important;
 }

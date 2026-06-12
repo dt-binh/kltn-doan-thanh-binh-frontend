@@ -126,6 +126,11 @@ const BookList = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentBooks = filteredBooks.slice(indexOfFirstItem, indexOfLastItem);
 
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <>
       <Header />
@@ -230,7 +235,7 @@ const BookList = () => {
                   <div className="pagination">
                   <button
                     disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(currentPage - 1)}
+                    onClick={() => handlePageChange(currentPage - 1)}
                     className="pagination-btn"
                   >
                       &laquo; Trước
@@ -239,7 +244,7 @@ const BookList = () => {
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}
-                        onClick={() => setCurrentPage(page)}
+                        onClick={() => handlePageChange(page)}
                         className={`pagination-btn ${
                           currentPage === page ? "pagination-active" : ""
                         }`}
@@ -250,7 +255,7 @@ const BookList = () => {
 
                     <button
                       disabled={currentPage === totalPages}
-                      onClick={() => setCurrentPage(currentPage + 1)}
+                      onClick={() => handlePageChange(currentPage + 1)}
                       className="pagination-btn"
                     >
                       Sau &raquo;

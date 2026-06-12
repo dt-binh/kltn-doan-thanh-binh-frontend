@@ -30,6 +30,7 @@ const Cart = () => {
       const formattedItems = res.data.map((item) => ({
         id: item.id,
         quantity: item.quantity,
+        dbQuantity: item.quantity, // Lưu lại số lượng gốc từ DB
         book: {
           id: item.book_id,
           title: item.title,
@@ -52,9 +53,18 @@ const Cart = () => {
     if (newQty < 1) return;
     const item = cartItems.find((i) => i.id === itemId);
     if (!item) return;
-    //tính số lg chênh lệch (2->3)
-    const diff = newQty - item.quantity;
-    if (diff === 0) return;
+    
+    // Cập nhật state cục bộ ngay lập tức để giao diện (tổng tiền, cảnh báo, nút thanh toán) phản hồi ngay
+    setCartItems((prev) =>
+      prev.map((i) => (i.id === itemId ? { ...i, quantity: newQty } : i))
+    );
+
+    // Nếu số lượng mới vượt tồn kho thì dừng ở đây, không gọi API xuống DB
+    if (newQty > item.book.stock) return;
+
+    // Tính số lượng chênh lệch so với DB để gửi xuống API
+    const diff = newQty - item.dbQuantity;
+    if (diff === 0) return; // Không có thay đổi so với DB thì bỏ qua
 
     const token = localStorage.getItem("token");
     try {
@@ -63,13 +73,14 @@ const Cart = () => {
         { book_id: item.book.id, quantity: diff },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      //tải lại giỏ hàng để tính tổng mới
       fetchCart();
     } catch (error) {
       console.error("Lỗi cập nhật số lượng:", error);
       if (error.response?.data?.message) {
         alert(error.response.data.message);
       }
+      // Phục hồi lại dữ liệu nếu API lỗi
+      fetchCart();
     }
   };
 
@@ -126,11 +137,6 @@ const Cart = () => {
                       updateQuantity={updateQuantity}
                       removeItem={removeItem}
                     />
-                    {item.quantity > item.book.stock && (
-                      <p style={{ color: 'red', fontSize: '0.85rem', marginLeft: '120px', marginTop: '-15px', marginBottom: '15px' }}>
-                        * Trong kho chỉ còn {item.book.stock} quyển. Vui lòng giảm số lượng.
-                      </p>
-                    )}
                   </div>
                 ))}
               </div>
@@ -152,12 +158,6 @@ const Cart = () => {
                   <span>Tổng cộng:</span>
                   <span>{total.toLocaleString()} ₫</span>
                 </div>
-
-                {hasOutOfStock && (
-                  <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '10px', textAlign: 'center' }}>
-                    Vui lòng giảm số lượng sản phẩm bị quá tải trước khi thanh toán.
-                  </p>
-                )}
 
                 {hasOutOfStock ? (
                   <button className="checkout-btn2" disabled style={{ background: '#ccc', cursor: 'not-allowed' }}>Thanh toán</button>
