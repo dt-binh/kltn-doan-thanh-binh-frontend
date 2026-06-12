@@ -195,3 +195,18 @@ INSERT INTO reviews (book_id, user_id, rating, comment) VALUES
 (1, 2, 5, 'Truyện rất hay, rất đáng đọc!'),
 (2, 2, 4, 'Bìa đẹp, nội dung hấp dẫn.'),
 (3, 2, 5, 'Tuyệt vời, sẽ giới thiệu cho bạn bè!');
+
+-- =========================================================
+-- SAMPLE BOOK IMPORTS
+-- =========================================================
+CREATE TABLE IF NOT EXISTS book_imports (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    book_id INT,
+    quantity INT,
+    import_date DATE
+);
+
+INSERT INTO book_imports (book_id, quantity, import_date) VALUES 
+(1, 100, CURDATE() - INTERVAL 1 MONTH),
+(2, 50, CURDATE()),
+(3, 75, CURDATE());

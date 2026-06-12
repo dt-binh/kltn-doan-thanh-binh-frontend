@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import '../../pages/admin/Dashboard.css';
+import './Dashboard.css';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
+    totalStock: 0,
     users: 0,
     books: 0,
     orders: 0,
     revenue: 0,
-    revenueByMonth: new Array(12).fill(0)
+    revenueByMonth: new Array(12).fill(0),
+    soldByMonth: new Array(12).fill(0),
+    importedByMonth: new Array(12).fill(0)
   });
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,7 +36,7 @@ const Dashboard = () => {
 
       try {
         const [statsRes, ordersRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/admin/stats", {
+          axios.get(`http://localhost:5000/api/admin/stats?year=${selectedYear}`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
           axios.get("http://localhost:5000/api/orders", {
@@ -61,7 +65,7 @@ const Dashboard = () => {
     };
 
     fetchData();
-  }, []);
+  }, [selectedYear]); // Chạy lại fetchData khi selectedYear thay đổi
 
   if (loading) return <div>Đang tải dữ liệu...</div>;
 
@@ -69,9 +73,20 @@ const Dashboard = () => {
   const maxMonthlyRevenue = Math.max(...(stats.revenueByMonth || [0]));
   const maxBarHeight = maxMonthlyRevenue > 0 ? maxMonthlyRevenue : 1;
 
+  // Tạo danh sách 5 năm gần nhất cho Dropdown
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+
   return (
     <main className="admin-content">
       <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon">📦</div>
+          <div className="stat-info">
+            <h3>{stats.totalStock}</h3>
+            <p>Tổng truyện trong kho</p>
+          </div>
+        </div>
         <div className="stat-card">
           <div className="stat-icon">👥</div>
           <div className="stat-info">
@@ -83,7 +98,7 @@ const Dashboard = () => {
           <div className="stat-icon">📚</div>
           <div className="stat-info">
             <h3>{stats.books}</h3>
-            <p>Tổng truyện</p>
+            <p>Tổng đầu truyện</p>
           </div>
         </div>
         <div className="stat-card">
@@ -99,6 +114,23 @@ const Dashboard = () => {
             <h3>{Number(stats.revenue || 0).toLocaleString()} ₫</h3>
             <p>Doanh thu</p>
           </div>
+        </div>
+      </div>
+
+      {/* Thanh lọc theo năm */}
+      <div className="filter-section" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#fff', padding: '8px 15px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+          <label htmlFor="yearFilter" style={{ fontWeight: 'bold', color: '#4b5563' }}>Lọc theo năm:</label>
+          <select 
+            id="yearFilter"
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            style={{ border: '1px solid #d1d5db', borderRadius: '6px', padding: '4px 8px', outline: 'none', cursor: 'pointer' }}
+          >
+            {years.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -119,6 +151,51 @@ const Dashboard = () => {
             {[...Array(12)].map((_, i) => (
               <span key={i}>T{i + 1}</span>
             ))}
+          </div>
+        </div>
+
+        <div className="chart-card">
+          <h3>Số lượng Nhập / Bán theo tháng</h3>
+          <div className="chart-bar" style={{ gap: '4px' }}>
+            {Array.from({ length: 12 }).map((_, index) => {
+              const sold = stats.soldByMonth?.[index] || 0;
+              const imported = stats.importedByMonth?.[index] || 0;
+              
+              // Tính % độ cao cho thanh biểu đồ
+              const maxVal = Math.max(...(stats.soldByMonth || [0]), ...(stats.importedByMonth || [0]), 1);
+              const soldHeight = `${(sold / maxVal) * 100}%`;
+              const importedHeight = `${(imported / maxVal) * 100}%`;
+
+              return (
+                <div key={index} style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: '2px', height: '100%' }}>
+                  <div 
+                    title={`Nhập: ${imported}`} 
+                    style={{ flex: 1, height: importedHeight, background: '#3b82f6', borderRadius: '6px 6px 0 0', transition: '0.3s' }}
+                  ></div>
+                  <div 
+                    title={`Bán: ${sold}`} 
+                    style={{ flex: 1, height: soldHeight, background: '#ff4d6d', borderRadius: '6px 6px 0 0', transition: '0.3s' }}
+                  ></div>
+                </div>
+              );
+            })}
+          </div>
+          
+          <div className="chart-labels">
+            {Array.from({ length: 12 }).map((_, index) => (
+              <span key={index} style={{ flex: 1, textAlign: 'center' }}>T{index + 1}</span>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '16px', height: '16px', background: '#3b82f6', borderRadius: '4px' }}></div>
+              <span style={{ fontSize: '13px', color: 'rgba(17, 24, 39, 0.75)' }}>Truyện nhập kho</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '16px', height: '16px', background: '#ff4d6d', borderRadius: '4px' }}></div>
+              <span style={{ fontSize: '13px', color: 'rgba(17, 24, 39, 0.75)' }}>Truyện bán ra</span>
+            </div>
           </div>
         </div>
       </div>

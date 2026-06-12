@@ -326,6 +326,9 @@ app.put("/api/profile", verifyToken, (req, res) => {
 app.get("/api/admin/stats", verifyToken, async (req, res) => {
   if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền" });
 
+  // Lấy năm từ query, nếu không có thì mặc định là năm hiện tại
+  const targetYear = req.query.year || new Date().getFullYear();
+
   try {
     //hàm hỗ trợ để thực hiện truy vấn đếm số lượng bản ghi cho từng bảng
     const getCount = (query) => new Promise((resolve, reject) => {
@@ -346,11 +349,48 @@ app.get("/api/admin/stats", verifyToken, async (req, res) => {
       const query = `
         SELECT MONTH(order_date) as month, SUM(total) as revenue 
         FROM orders 
-        WHERE status = 'Đã giao' AND YEAR(order_date) = YEAR(CURDATE()) 
+        WHERE status = 'Đã giao' AND YEAR(order_date) = ? 
         GROUP BY MONTH(order_date)
       `;
-      db.query(query, (err, result) => {
+      db.query(query, [targetYear], (err, result) => {
         if (err) reject(err);
+        else resolve(result);
+      });
+    });
+      const getTotalStock = () => new Promise((resolve, reject) => {
+      db.query("SELECT SUM(stock) as totalStock FROM books", (err, result) => {
+        if (err) reject(err);
+        else resolve(result[0].totalStock || 0);
+      });
+    });
+
+    const getMonthlySold = () => new Promise((resolve, reject) => {
+      const query = `
+        SELECT MONTH(orders.order_date) as month, SUM(order_items.quantity) as sold 
+        FROM order_items 
+        JOIN orders ON order_items.order_id = orders.id 
+        WHERE orders.status = 'Đã giao' AND YEAR(orders.order_date) = ? 
+        GROUP BY MONTH(orders.order_date)
+      `;
+      db.query(query, [targetYear], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+
+    const getMonthlyImported = () => new Promise((resolve, reject) => {
+      const query = `
+        SELECT MONTH(import_date) as month, SUM(quantity) as imported 
+        FROM book_imports 
+        WHERE YEAR(import_date) = ? 
+        GROUP BY MONTH(import_date)
+      `;
+      db.query(query, [targetYear], (err, result) => {
+        if (err) {
+          // Bắt lỗi nếu bảng book_imports chưa được tạo
+          if (err.code === 'ER_NO_SUCH_TABLE') resolve([]);
+          else reject(err);
+        }
         else resolve(result);
       });
     });
@@ -360,18 +400,32 @@ app.get("/api/admin/stats", verifyToken, async (req, res) => {
     const ordersCount = await getCount("SELECT COUNT(*) as count FROM orders");
     const revenue = await getTotalRevenue();
     const monthlyRevenueData = await getMonthlyRevenue();
+    const totalStock = await getTotalStock();
+    const monthlySoldData = await getMonthlySold();
+    const monthlyImportedData = await getMonthlyImported();
 
     const revenueByMonth = new Array(12).fill(0);
     monthlyRevenueData.forEach(item => {
       revenueByMonth[item.month - 1] = Number(item.revenue) || 0;
     });
+     const soldByMonth = new Array(12).fill(0);
+    monthlySoldData.forEach(item => {
+      soldByMonth[item.month - 1] = Number(item.sold) || 0;
+    });
+    const importedByMonth = new Array(12).fill(0);
+    monthlyImportedData.forEach(item => {
+      importedByMonth[item.month - 1] = Number(item.imported) || 0;
+    });
     //trả kq cho fe
     res.json({
+      totalStock: totalStock,
       users: usersCount,
       books: booksCount,
       orders: ordersCount,
       revenue: revenue,
-      revenueByMonth: revenueByMonth
+      revenueByMonth: revenueByMonth,
+      soldByMonth: soldByMonth,
+      importedByMonth: importedByMonth
     });
   } catch (error) {
     res.status(500).json(error);
@@ -506,8 +560,13 @@ app.post("/api/books", verifyToken, (req, res) => {
   const { title, author_id, genre_id, price, stock, image, description } = req.body;
   const sql = "INSERT INTO books (title, author_id, genre_id, price, stock, image, description) VALUES (?, ?, ?, ?, ?, ?, ?)";
   
-  db.query(sql, [title, author_id, genre_id, price, stock || 0, image, description], (err, result) => {
+  const newStock = stock || 0;
+  db.query(sql, [title, author_id, genre_id, price, newStock, image, description], (err, result) => {
     if (err) return res.status(500).json(err);
+    if (newStock > 0) {
+      db.query("CREATE TABLE IF NOT EXISTS book_imports (id INT AUTO_INCREMENT PRIMARY KEY, book_id INT, quantity INT, import_date DATE)");
+      db.query("INSERT INTO book_imports (book_id, quantity, import_date) VALUES (?, ?, CURDATE())", [result.insertId, newStock]);
+    }
     res.status(201).json({ message: "Thêm sách thành công", id: result.insertId });
   });
 });
@@ -520,9 +579,20 @@ app.put("/api/books/:id", verifyToken, (req, res) => {
   const { title, author_id, genre_id, price, stock, image, description } = req.body;
   const sql = "UPDATE books SET title=?, author_id=?, genre_id=?, price=?, stock=?, image=?, description=? WHERE id=?";
   
-  db.query(sql, [title, author_id, genre_id, price, stock || 0, image, description, id], (err) => {
+  db.query("SELECT stock FROM books WHERE id = ?", [id], (err, results) => {
     if (err) return res.status(500).json(err);
-    res.json({ message: "Cập nhật sách thành công" });
+    const oldStock = results.length > 0 ? results[0].stock : 0;
+    const newStock = stock || 0;
+    const importedQty = newStock - oldStock;
+
+    db.query(sql, [title, author_id, genre_id, price, newStock, image, description, id], (err) => {
+      if (err) return res.status(500).json(err);
+      if (importedQty > 0) {
+        db.query("CREATE TABLE IF NOT EXISTS book_imports (id INT AUTO_INCREMENT PRIMARY KEY, book_id INT, quantity INT, import_date DATE)");
+        db.query("INSERT INTO book_imports (book_id, quantity, import_date) VALUES (?, ?, CURDATE())", [id, importedQty]);
+      }
+      res.json({ message: "Cập nhật sách thành công" });
+    });
   });
 });
 
