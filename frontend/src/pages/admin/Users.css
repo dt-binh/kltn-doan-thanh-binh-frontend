@@ -123,8 +123,6 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-
-  min-width: 90px;
   min-height: 34px;
 
   line-height: 1;

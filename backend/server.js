@@ -326,8 +326,9 @@ app.put("/api/profile", verifyToken, (req, res) => {
 app.get("/api/admin/stats", verifyToken, async (req, res) => {
   if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền" });
 
-  // Lấy năm từ query, nếu không có thì mặc định là năm hiện tại
-  const targetYear = req.query.year || new Date().getFullYear();
+  // Lấy năm từ query, hỗ trợ riêng biệt năm cho biểu đồ doanh thu và số lượng bán
+  const revenueYear = req.query.revenueYear || req.query.year || new Date().getFullYear();
+  const salesYear = req.query.salesYear || req.query.year || new Date().getFullYear();
 
   try {
     //hàm hỗ trợ để thực hiện truy vấn đếm số lượng bản ghi cho từng bảng
@@ -352,7 +353,7 @@ app.get("/api/admin/stats", verifyToken, async (req, res) => {
         WHERE status = 'Đã giao' AND YEAR(order_date) = ? 
         GROUP BY MONTH(order_date)
       `;
-      db.query(query, [targetYear], (err, result) => {
+      db.query(query, [revenueYear], (err, result) => {
         if (err) reject(err);
         else resolve(result);
       });
@@ -372,7 +373,7 @@ app.get("/api/admin/stats", verifyToken, async (req, res) => {
         WHERE orders.status = 'Đã giao' AND YEAR(orders.order_date) = ? 
         GROUP BY MONTH(orders.order_date)
       `;
-      db.query(query, [targetYear], (err, result) => {
+      db.query(query, [salesYear], (err, result) => {
         if (err) reject(err);
         else resolve(result);
       });
@@ -385,7 +386,7 @@ app.get("/api/admin/stats", verifyToken, async (req, res) => {
         WHERE YEAR(import_date) = ? 
         GROUP BY MONTH(import_date)
       `;
-      db.query(query, [targetYear], (err, result) => {
+      db.query(query, [salesYear], (err, result) => {
         if (err) {
           // Bắt lỗi nếu bảng book_imports chưa được tạo
           if (err.code === 'ER_NO_SUCH_TABLE') resolve([]);
@@ -557,15 +558,16 @@ app.post("/api/books/:id/reviews", verifyToken, (req, res) => {
 app.post("/api/books", verifyToken, (req, res) => {
   if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
   
-  const { title, author_id, genre_id, price, stock, image, description } = req.body;
+  const { title, author_id, genre_id, price, stock, image, description, import_price } = req.body;
   const sql = "INSERT INTO books (title, author_id, genre_id, price, stock, image, description) VALUES (?, ?, ?, ?, ?, ?, ?)";
   
   const newStock = stock || 0;
+  const impPrice = import_price || 0;
   db.query(sql, [title, author_id, genre_id, price, newStock, image, description], (err, result) => {
     if (err) return res.status(500).json(err);
     if (newStock > 0) {
-      db.query("CREATE TABLE IF NOT EXISTS book_imports (id INT AUTO_INCREMENT PRIMARY KEY, book_id INT, quantity INT, import_date DATE)");
-      db.query("INSERT INTO book_imports (book_id, quantity, import_date) VALUES (?, ?, CURDATE())", [result.insertId, newStock]);
+      db.query("CREATE TABLE IF NOT EXISTS book_imports (id INT AUTO_INCREMENT PRIMARY KEY, book_id INT, quantity INT, import_price INT, import_date DATE)");
+      db.query("INSERT INTO book_imports (book_id, quantity, import_price, import_date) VALUES (?, ?, ?, CURDATE())", [result.insertId, newStock, impPrice]);
     }
     res.status(201).json({ message: "Thêm sách thành công", id: result.insertId });
   });
@@ -576,7 +578,7 @@ app.put("/api/books/:id", verifyToken, (req, res) => {
   if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
   
   const { id } = req.params;
-  const { title, author_id, genre_id, price, stock, image, description } = req.body;
+  const { title, author_id, genre_id, price, stock, image, description, import_price } = req.body;
   const sql = "UPDATE books SET title=?, author_id=?, genre_id=?, price=?, stock=?, image=?, description=? WHERE id=?";
   
   db.query("SELECT stock FROM books WHERE id = ?", [id], (err, results) => {
@@ -584,12 +586,13 @@ app.put("/api/books/:id", verifyToken, (req, res) => {
     const oldStock = results.length > 0 ? results[0].stock : 0;
     const newStock = stock || 0;
     const importedQty = newStock - oldStock;
+    const impPrice = import_price || 0;
 
     db.query(sql, [title, author_id, genre_id, price, newStock, image, description, id], (err) => {
       if (err) return res.status(500).json(err);
       if (importedQty > 0) {
-        db.query("CREATE TABLE IF NOT EXISTS book_imports (id INT AUTO_INCREMENT PRIMARY KEY, book_id INT, quantity INT, import_date DATE)");
-        db.query("INSERT INTO book_imports (book_id, quantity, import_date) VALUES (?, ?, CURDATE())", [id, importedQty]);
+        db.query("CREATE TABLE IF NOT EXISTS book_imports (id INT AUTO_INCREMENT PRIMARY KEY, book_id INT, quantity INT, import_price INT, import_date DATE)");
+        db.query("INSERT INTO book_imports (book_id, quantity, import_price, import_date) VALUES (?, ?, ?, CURDATE())", [id, importedQty, impPrice]);
       }
       res.json({ message: "Cập nhật sách thành công" });
     });

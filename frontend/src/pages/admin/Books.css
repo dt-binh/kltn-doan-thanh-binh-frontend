@@ -114,7 +114,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   min-height: 40px;
 }
 
@@ -135,8 +134,6 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-
-  min-width: 36px;
   min-height: 36px;
 
   line-height: 1;
@@ -262,11 +259,11 @@ th.col-action,
 td.action-cell {
   width: 120px;
   text-align: center;
+  
 }
 
-.col-stock {
-  width: 150px;
-  min-width: 120px;
+td.action-cell {
+    height: 66px;
 }
 
 .col-image {

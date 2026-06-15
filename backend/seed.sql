@@ -203,10 +203,11 @@ CREATE TABLE IF NOT EXISTS book_imports (
     id INT AUTO_INCREMENT PRIMARY KEY,
     book_id INT,
     quantity INT,
+    import_price INT,
     import_date DATE
 );
 
-INSERT INTO book_imports (book_id, quantity, import_date) VALUES 
-(1, 100, CURDATE() - INTERVAL 1 MONTH),
-(2, 50, CURDATE()),
-(3, 75, CURDATE());
+INSERT INTO book_imports (book_id, quantity, import_price, import_date) VALUES 
+(1, 100, 100000, CURDATE() - INTERVAL 1 MONTH),
+(2, 50, 50000, CURDATE()),
+(3, 75, 80000, CURDATE());
