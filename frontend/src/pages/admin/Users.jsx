@@ -77,7 +77,7 @@ const Users = () => {
   };
 
   return (
-    <div className="admin-page">
+    <div className="users-page admin-page">
       <h2>Quản lý người dùng ({users.length})</h2>
 
       <div className="table-container">

@@ -6,21 +6,21 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-.books-header {
+.books-page .books-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
+  margin-bottom: 15px;
 }
 
-.books-header h2 {
+.books-page .books-header h2 {
   margin: 0;
   color: #0f172a;
   font-weight: 700;
-  font-size: 20px;
+  font-size: 18px;
 }
 
-.btn-add {
+.books-page .btn-add {
   background: linear-gradient(
     135deg,
     #6366f1 0%,
@@ -40,37 +40,37 @@
   transition: all 0.2s ease;
 }
 
-.btn-add:hover {
+.books-page .btn-add:hover {
   transform: translateY(-2px);
 
   box-shadow: 0 6px 10px -1px
     rgba(79, 70, 229, 0.4);
 }
 
-.btn-add:active {
+.books-page .btn-add:active {
   transform: translateY(0);
 }
 
-.books-table-container {
+.books-page .books-table-container {
   overflow-x: auto;
 }
 
-.books-table {
+.books-page .books-table {
   width: 100%;
   border-collapse: collapse;
   min-width: 900px;
 }
 
-.books-table th,
-.books-table td {
-  padding: 15px;
+.books-page .books-table th,
+.books-page .books-table td {
+  padding: 9px;
   border-bottom: 1px solid #f1f5f9;
-  text-align: left;
+  text-align: center;
   vertical-align: middle;
   color: #334155;
 }
 
-.books-table th {
+.books-page .books-table th {
   background-color: #f8fafc;
   color: #64748b;
   font-weight: 600;
@@ -79,9 +79,9 @@
   letter-spacing: 0.05em;
 }
 
-.books-table input[type="text"],
-.books-table input[type="number"],
-.books-table select {
+.books-page .books-table input[type="text"],
+.books-page .books-table input[type="number"],
+.books-page .books-table select {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid #cbd5e1;
@@ -92,25 +92,25 @@
   box-sizing: border-box;
 }
 
-.books-table input:focus,
-.books-table select:focus {
+.books-page .books-table input:focus,
+.books-page .books-table select:focus {
   border-color: #4f46e5;
 
   box-shadow: 0 0 0 3px
     rgba(79, 70, 229, 0.15);
 }
 
-.add-row {
+.books-page .add-row {
   background-color: #f0fdf4;
 }
 
 /* ACTION */
 
-.action-cell {
+.books-page .action-cell {
   vertical-align: middle;
 }
 
-.action-wrapper {
+.books-page .action-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -119,11 +119,11 @@
 }
 
 /* BUTTON */
-
-.btn-edit,
-.btn-save,
-.btn-delete,
-.btn-cancel {
+.books-page .btn-import,
+.books-page .btn-edit,
+.books-page .btn-save,
+.books-page .btn-delete,
+.books-page .btn-cancel {
   border: none;
   padding: 8px;
   border-radius: 6px;
@@ -136,73 +136,74 @@
   justify-content: center;
   gap: 4px;
   min-height: 36px;
+  min-width: 36px;
 
   line-height: 1;
   box-sizing: border-box;
 }
 
-.btn-edit,
-.btn-save {
+.books-page .btn-edit,
+.books-page .btn-save {
   background-color: #eff6ff;
   color: #2563eb;
 }
 
-.btn-edit:hover,
-.btn-save:hover {
+.books-page .btn-edit:hover,
+.books-page .btn-save:hover {
   background-color: #c7d2fe;
 }
 
-.btn-delete,
-.btn-cancel {
+.books-page .btn-delete,
+.books-page .btn-cancel {
   background-color: #fef2f2;
   color: #dc2626;
 }
 
-.btn-delete:hover,
-.btn-cancel:hover {
+.books-page .btn-delete:hover,
+.books-page .btn-cancel:hover {
   background-color: #fecaca;
 }
 
-.btn-import {
+.books-page .btn-import {
   background-color: #ecfdf5;
   color: #059669;
 }
 
-.btn-import:hover {
+.books-page .btn-import:hover {
   background-color: #d1fae5;
 }
 
-.books-table img {
+.books-page .books-table img {
   display: block;
 }
 
-.image-upload-box {
+.books-page .image-upload-box {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.image-upload-inline {
+.books-page .image-upload-inline {
   flex-direction: row;
   align-items: center;
   gap: 10px;
 }
 
-.flex-input {
+.books-page .flex-input {
   flex: 1;
   max-width: none !important;
 }
 
-.upload-label-inline {
+.books-page .upload-label-inline {
   margin-bottom: 0;
 }
 
-.image-upload-box input[type="text"] {
+.books-page .image-upload-box input[type="text"] {
   max-width: 120px; /* Giới hạn chiều rộng để không đẩy các nút thao tác */
   font-size: 0.8rem;
 }
 
-.file-upload-label {
+.books-page .file-upload-label {
   display: inline-block;
   padding: 6px 10px;
   background-color: #f1f5f9;
@@ -217,12 +218,12 @@
   box-sizing: border-box;
 }
 
-.file-upload-label:hover {
+.books-page .file-upload-label:hover {
   background-color: #e2e8f0;
   border-color: #94a3b8;
 }
 
-.book-thumbnail {
+.books-page .book-thumbnail {
   width: 45px;
   height: 65px;
   object-fit: cover;
@@ -230,7 +231,7 @@
   border: 1px solid #e5e7eb;
 }
 
-.pagination {
+.books-page .pagination {
   display: flex;
   justify-content: center;
   gap: 8px;
@@ -238,7 +239,7 @@
   margin-bottom: 20px;
 }
 
-.pagination-btn {
+.books-page .pagination-btn {
   padding: 6px 12px;
   cursor: pointer;
   border-radius: 4px;
@@ -246,28 +247,28 @@
   background: #fff;
 }
 
-.pagination-btn:disabled {
+.books-page .pagination-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-.active-page {
+.books-page .active-page {
   background: #3b82f6;
   color: white;
 }
 
-th.col-action,
-td.action-cell {
+.books-page th.col-action,
+.books-page td.action-cell {
   width: 120px;
   text-align: center;
   
 }
 
-td.action-cell {
+.books-page td.action-cell {
     height: 66px;
 }
 
-.col-image {
+.books-page .col-image {
   width: 140px;
   max-width: 140px;
   overflow: hidden;
@@ -277,7 +278,7 @@ td.action-cell {
    MODAL
 ========================= */
 
-.modal-overlay {
+.books-page .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -290,7 +291,7 @@ td.action-cell {
   z-index: 1000;
 }
 
-.modal-content {
+.books-page .modal-content {
   background: white;
   padding: 24px;
   border-radius: 12px;
@@ -301,18 +302,18 @@ td.action-cell {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
-.modal-header h3 {
+.books-page .modal-header h3 {
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   color: #0f172a;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
 }
 
-.form-group {
+.books-page .form-group {
   margin-bottom: 15px;
 }
 
-.form-group label {
+.books-page .form-group label {
   display: block;
   margin-bottom: 6px;
   font-weight: 600;
@@ -320,9 +321,9 @@ td.action-cell {
   color: #475569;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.books-page .form-group input,
+.books-page .form-group select,
+.books-page .form-group textarea {
   width: 100%;
   padding: 8px 12px;
   border: 1px solid #cbd5e1;
@@ -334,24 +335,24 @@ td.action-cell {
   box-sizing: border-box;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.books-page .form-group input:focus,
+.books-page .form-group select:focus,
+.books-page .form-group textarea:focus {
   border-color: #4f46e5;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 
-.hidden-input {
+.books-page .hidden-input {
   display: none;
 }
 
-.form-group input:disabled {
+.books-page .form-group input:disabled {
   background-color: #f1f5f9;
   color: #94a3b8;
   cursor: not-allowed;
 }
 
-.modal-actions {
+.books-page .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;

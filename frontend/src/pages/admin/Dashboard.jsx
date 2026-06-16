@@ -78,7 +78,7 @@ const Dashboard = () => {
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   return (
-    <main className="admin-content">
+    <main className="dashboard-page admin-content">
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-icon">📦</div>
@@ -153,51 +153,6 @@ const Dashboard = () => {
             ))}
           </div>
         </div>
-
-        <div className="chart-card">
-          <h3>Số lượng Nhập / Bán theo tháng</h3>
-          <div className="chart-bar" style={{ gap: '4px' }}>
-            {Array.from({ length: 12 }).map((_, index) => {
-              const sold = stats.soldByMonth?.[index] || 0;
-              const imported = stats.importedByMonth?.[index] || 0;
-              
-              // Tính % độ cao cho thanh biểu đồ
-              const maxVal = Math.max(...(stats.soldByMonth || [0]), ...(stats.importedByMonth || [0]), 1);
-              const soldHeight = `${(sold / maxVal) * 100}%`;
-              const importedHeight = `${(imported / maxVal) * 100}%`;
-
-              return (
-                <div key={index} style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: '2px', height: '100%' }}>
-                  <div 
-                    title={`Nhập: ${imported}`} 
-                    style={{ flex: 1, height: importedHeight, background: '#3b82f6', borderRadius: '6px 6px 0 0', transition: '0.3s' }}
-                  ></div>
-                  <div 
-                    title={`Bán: ${sold}`} 
-                    style={{ flex: 1, height: soldHeight, background: '#ff4d6d', borderRadius: '6px 6px 0 0', transition: '0.3s' }}
-                  ></div>
-                </div>
-              );
-            })}
-          </div>
-          
-          <div className="chart-labels">
-            {Array.from({ length: 12 }).map((_, index) => (
-              <span key={index} style={{ flex: 1, textAlign: 'center' }}>T{index + 1}</span>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '16px', height: '16px', background: '#3b82f6', borderRadius: '4px' }}></div>
-              <span style={{ fontSize: '13px', color: 'rgba(17, 24, 39, 0.75)' }}>Truyện nhập kho</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '16px', height: '16px', background: '#ff4d6d', borderRadius: '4px' }}></div>
-              <span style={{ fontSize: '13px', color: 'rgba(17, 24, 39, 0.75)' }}>Truyện bán ra</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="recent-orders">
@@ -208,7 +163,13 @@ const Dashboard = () => {
               <span>DH{order.id.toString().padStart(4, '0')}</span>
               <span>{order.username}</span>
               <span>{order.total.toLocaleString()} ₫</span>
-              <span className={`status ${order.status === 'Đã giao' ? 'success' : order.status === 'Đã hủy' ? 'danger' : 'pending'}`}>
+              <span className={`status ${
+                order.status === 'Đã giao' ? 'status-success' : 
+                order.status === 'Đã hủy' ? 'status-danger' : 
+                order.status === 'Đang giao' ? 'status-delivering' : 
+                order.status === 'Đang xử lí' ? 'status-processing' : 
+                'status-pending'
+              }`}>
                 {order.status}
               </span>
             </div>

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-import "../../pages/user/Register.css";
+import "./Register.css";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -60,7 +60,7 @@ const Register = () => {
   };
 
   return (
-    <div className="auth-page">
+    <div className="register-page auth-page">
       <div className="container">
         <div className="auth-card">
           <h1>Đăng ký tài khoản</h1>

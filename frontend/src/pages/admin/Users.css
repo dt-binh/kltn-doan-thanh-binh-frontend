@@ -1,8 +1,8 @@
-.admin-page {
+.users-page {
   padding: 20px;
 }
 
-.admin-page h2 {
+.users-page h2 {
   margin-bottom: 20px;
   font-size: 20px;
   font-weight: 700;
@@ -11,18 +11,18 @@
 
 /* TABLE */
 
-.table-container {
+.users-page .table-container {
   width: 100%;
   overflow-x: auto;
 }
 
-.admin-table {
+.users-page .admin-table {
   width: 100%;
   border-collapse: collapse;
   background: white;
 }
 
-.admin-table th {
+.users-page .admin-table th {
   background: #f3f4f6;
   color: #6b7280;
   font-size: 11px;
@@ -32,7 +32,7 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
-.admin-table td {
+.users-page .admin-table td {
   padding: 17px;
   border-bottom: 1px solid #e5e7eb;
   vertical-align: middle;
@@ -42,12 +42,12 @@
 
 /* STATUS */
 
-.status-wrapper {
+.users-page .status-wrapper {
   display: flex;
   align-items: center;
 }
 
-.user-status {
+.users-page .user-status {
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -62,13 +62,13 @@
   box-sizing: border-box;
 }
 
-.user-status.active {
+.users-page .user-status.active {
   background-color: #ecfdf5;
   color: #065f46;
   border: 1px solid #a7f3d0;
 }
 
-.user-status.inactive {
+.users-page .user-status.inactive {
   background-color: #fef2f2;
   color: #991b1b;
   border: 1px solid #fecaca;
@@ -77,12 +77,12 @@
 
 /* HISTORY */
 
-.history-wrapper {
+.users-page .history-wrapper {
   display: flex;
   align-items: center;
 }
 
-.history-btn {
+.users-page .history-btn {
   padding: 8px 14px;
   background: #3b82f6;
   color: white;
@@ -94,23 +94,23 @@
   min-height: 34px;
 }
 
-.history-btn:hover {
+.users-page .history-btn:hover {
   opacity: 0.9;
 }
 
 /* ACTION */
 
-.action-cell {
+.users-page .action-cell {
   vertical-align: middle;
 }
 
-.action-wrapper {
+.users-page .action-wrapper {
   display: flex;
   align-items: center;
   min-height: 40px;
 }
 
-.action-cell button {
+.users-page .action-cell button {
   padding: 8px 14px;
   border: none;
   border-radius: 6px;
@@ -129,25 +129,25 @@
   box-sizing: border-box;
 }
 
-.btn-lock {
+.users-page .btn-lock {
   background-color: #fef2f2;
   color: #dc2626;
 }
 
-.btn-lock:hover {
+.users-page .btn-lock:hover {
   background-color: #fee2e2;
 }
 
-.btn-unlock {
+.users-page .btn-unlock {
   background-color: #ecfdf5;
   color: #059669;
 }
 
-.btn-unlock:hover {
+.users-page .btn-unlock:hover {
   background-color: #d1fae5;
 }
 
-.admin-text {
+.users-page .admin-text {
   color: #9ca3af;
   font-style: italic;
   font-size: 13px;

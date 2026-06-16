@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import './Dashboard.css';
+import './Orders.css';
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -78,7 +78,7 @@ const Orders = () => {
   };
 
   return (
-    <div className="admin-page">
+    <div className="orders-page admin-page">
       <h2>Quản lý đơn hàng ({orders.length})</h2>
       <div className="table-container">
         <table className="admin-table">
@@ -102,19 +102,24 @@ const Orders = () => {
                 <td>{order.total.toLocaleString()} ₫</td>
                 <td>
                   {order.payment_method === 'qr' ? (
-                    <span className={`status ${order.status !== 'Chờ thanh toán' ? 'success' : 'pending'}`}>
-                      {order.status !== 'Chờ thanh toán' ? 'Đã thanh toán QR' : 'QR (Chờ TT)'}
+                    <span className={`status ${order.status !== 'Chờ thanh toán' ? 'status-success' : 'status-pending'}`}>
+                      {order.status !== 'Chờ thanh toán' ? 'TT QR' : 'QR (Chờ TT)'}
                     </span>
                   ) : (
-                    <span style={{ fontWeight: '500', color: '#4b5563' }}>Tiền mặt</span>
+                    <span className="payment-cash">Tiền mặt</span>
                   )}
                 </td>
                 <td>
                   <select 
                     value={order.status} 
                     onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                    className={`status ${order.status === 'Đã giao' ? 'success' : order.status === 'Đã hủy' ? 'danger' : 'pending'}`}
-                    style={{ border: 'none', outline: 'none', background: 'transparent' }}
+                    className={`status status-select ${
+                      order.status === 'Đã giao' ? 'status-success' : 
+                      order.status === 'Đã hủy' ? 'status-danger' : 
+                      order.status === 'Đang giao' ? 'status-delivering' : 
+                      order.status === 'Đang xử lí' ? 'status-processing' : 
+                      'status-pending'
+                    }`}
                     disabled={order.status === 'Đã hủy' || order.status === 'Đã giao'}
                   >
                     {order.status === 'Chờ thanh toán' && <option value="Chờ thanh toán">Chờ thanh toán</option>}
@@ -128,7 +133,7 @@ const Orders = () => {
                   <td>
                     <button
                       onClick={() => handleToggleOrderDetails(order.id)}
-                      style={{ padding: '6px 12px', background: expandedOrder === order.id ? '#6b7280' : '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+                      className={`btn-toggle-details ${expandedOrder === order.id ? 'active' : ''}`}
                     >
                       {expandedOrder === order.id ? 'Ẩn' : 'Chi tiết'}
                     </button>
@@ -137,28 +142,28 @@ const Orders = () => {
 
                 {expandedOrder === order.id && (
                   <tr>
-                    <td colSpan="7" style={{ padding: 0, borderBottom: '2px solid #e5e7eb' }}>
-                      <div style={{ padding: '15px 20px', background: '#f9fafb' }}>
+                    <td colSpan="7" className="details-td">
+                      <div className="details-wrapper">
                         {detailsLoading ? (
-                          <p style={{ margin: 0, color: '#6b7280' }}>Đang tải thông tin sản phẩm...</p>
+                          <p className="details-loading">Đang tải thông tin sản phẩm...</p>
                         ) : (
                           <div>
-                            <h4 style={{ margin: '0 0 10px 0', color: '#374151', fontSize: '14px' }}>Sản phẩm trong đơn hàng:</h4>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <h4 className="details-title">Sản phẩm trong đơn hàng:</h4>
+                            <div className="details-list">
                               {orderDetails.map(item => (
-                                <div key={item.book_id} style={{ display: 'flex', gap: '15px', alignItems: 'center', background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+                                <div key={item.book_id} className="detail-item">
                                   <img 
                                     src={item.image || "https://via.placeholder.com/50x70"} 
                                     alt={item.title} 
-                                    style={{ width: '40px', height: '55px', objectFit: 'cover', borderRadius: '4px' }} 
+                                    className="detail-img" 
                                   />
-                                  <div style={{ flex: 1 }}>
-                                    <p style={{ margin: '0 0 4px 0', fontWeight: '600', color: '#111827', fontSize: '14px' }}>{item.title}</p>
-                                    <p style={{ margin: 0, color: '#6b7280', fontSize: '13px' }}>
+                                  <div className="detail-info">
+                                    <p className="detail-name">{item.title}</p>
+                                    <p className="detail-qty">
                                       Số lượng: {item.quantity} x {item.price.toLocaleString()} ₫
                                     </p>
                                   </div>
-                                  <div style={{ fontWeight: 'bold', color: '#ef4444', fontSize: '15px' }}>
+                                  <div className="detail-price">
                                     {(item.quantity * item.price).toLocaleString()} ₫
                                   </div>
                                 </div>

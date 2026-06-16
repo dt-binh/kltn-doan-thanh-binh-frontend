@@ -1,0 +1,125 @@
+.orders-page .payment-cash {
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.orders-page .status-select {
+  border: none;
+  outline: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.orders-page .btn-toggle-details {
+  padding: 6px 12px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.orders-page .btn-toggle-details:hover {
+  background: #2563eb;
+}
+
+.orders-page .btn-toggle-details.active {
+  background: #6b7280;
+}
+
+.orders-page .btn-toggle-details.active:hover {
+  background: #4b5563;
+}
+
+.orders-page .details-td {
+  padding: 0 !important;
+  border-bottom: 2px solid #e5e7eb !important;
+}
+
+.orders-page .details-wrapper {
+  padding: 15px 20px;
+  background: #f9fafb;
+}
+
+.orders-page .details-loading {
+  margin: 0;
+  color: #6b7280;
+}
+
+.orders-page .details-title {
+  margin: 0 0 10px 0;
+  color: #374151;
+  font-size: 14px;
+}
+
+.orders-page .details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.orders-page .detail-item {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  background: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.orders-page .detail-img {
+  width: 40px;
+  height: 55px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.orders-page .detail-info {
+  flex: 1;
+}
+
+.orders-page .detail-name {
+  margin: 0 0 4px 0;
+  font-weight: 600;
+  color: #111827;
+  font-size: 14px;
+}
+
+.orders-page .detail-qty {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.orders-page .detail-price {
+  font-weight: bold;
+  color: #ef4444;
+  font-size: 15px;
+}
+/* Status */
+.orders-page .status {
+  font-weight: 900;
+}
+
+.orders-page .status-pending {
+  color: #f59e0b; /* Cam */
+}
+
+.orders-page .status-processing {
+  color: #3b82f6; /* Xanh dương */
+}
+
+.orders-page .status-delivering {
+  color: #8b5cf6; /* Tím */
+}
+
+.orders-page .status-success {
+  color: #10b981; /* Xanh lá */
+}
+
+.orders-page .status-danger {
+  color: #ef4444;
+}
