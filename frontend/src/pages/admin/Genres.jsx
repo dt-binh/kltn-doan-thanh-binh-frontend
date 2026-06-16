@@ -7,13 +7,9 @@ const Genres = () => {
   const navigate = useNavigate();
   const [genres, setGenres] = useState([]);
 
-  // EDIT
-  const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({});
-
-  // ADD
-  const [isAdding, setIsAdding] = useState(false);
-  const [newGenre, setNewGenre] = useState({ name: "" });
+  // MODAL STATES
+  const [modalType, setModalType] = useState(null); // 'add' | 'edit'
+  const [formData, setFormData] = useState({ id: null, name: "" });
 
   const token = localStorage.getItem("token");
 
@@ -36,34 +32,46 @@ const Genres = () => {
     fetchGenres();
   }, []);
 
-  // ================= EDIT =================
-  const handleEdit = (genre) => {
-    setEditingId(genre.id);
-    setEditData({ name: genre.name });
+  // ================= MODAL ACTIONS =================
+  const openModal = (type, genre = null) => {
+    setModalType(type);
+    if (genre) {
+      setFormData({ ...genre });
+    } else {
+      setFormData({ id: null, name: "" });
+    }
   };
 
-  const handleChange = (e) => {
-    setEditData({
-      ...editData,
+  const closeModal = () => {
+    setModalType(null);
+  };
+
+  const handleFormChange = (e) => {
+    setFormData({
+      ...formData,
       [e.target.name]: e.target.value,
     });
   };
 
-  const handleSave = async () => {
+  const handleSaveGenre = async () => {
+    if (!formData.name) return alert("Nhập tên thể loại!");
+
     try {
-      await axios.put(`http://localhost:5000/api/genres/${editingId}`, editData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setEditingId(null);
+      if (modalType === "add") {
+        await axios.post("http://localhost:5000/api/genres", formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } else if (modalType === "edit") {
+        await axios.put(`http://localhost:5000/api/genres/${formData.id}`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+      closeModal();
       fetchGenres();
     } catch (error) {
-      console.error("Lỗi cập nhật", error);
-      alert("Cập nhật thất bại");
+      console.error("Lỗi lưu thể loại", error);
+      alert("Lưu thất bại");
     }
-  };
-
-  const handleCancel = () => {
-    setEditingId(null);
   };
 
   // ================= DELETE =================
@@ -81,23 +89,6 @@ const Genres = () => {
     }
   };
 
-  // ================= ADD =================
-  const handleAdd = async () => {
-    if (!newGenre.name) return alert("Nhập tên thể loại!");
-
-    try {
-      await axios.post("http://localhost:5000/api/genres", newGenre, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setNewGenre({ name: "" });
-      setIsAdding(false);
-      fetchGenres();
-    } catch (error) {
-      console.error("Lỗi thêm", error);
-      alert("Thêm thất bại");
-    }
-  };
-
   return (
     <div className="genres-page">
       {/* HEADER */}
@@ -106,7 +97,7 @@ const Genres = () => {
 
         <button
           className="genres-btn-add"
-          onClick={() => setIsAdding(!isAdding)}
+          onClick={() => openModal('add')}
         >
           ➕ Thêm thể loại
         </button>
@@ -124,67 +115,16 @@ const Genres = () => {
           </thead>
 
           <tbody>
-            {/* ADD ROW */}
-            {isAdding && (
-              <tr className="add-row">
-                <td>--</td>
-
-                <td>
-                  <input
-                    placeholder="Nhập tên thể loại"
-                    value={newGenre.name}
-                    onChange={(e) =>
-                      setNewGenre({ ...newGenre, name: e.target.value })
-                    }
-                  />
-                </td>
-
-                <td className="action-cell">
-                  <button className="btn-save" onClick={handleAdd}>
-                    💾 Lưu
-                  </button>
-                  <button
-                    className="btn-cancel"
-                    onClick={() => setIsAdding(false)}
-                  >
-                    ❌ Hủy
-                  </button>
-                </td>
-              </tr>
-            )}
-
             {/* DATA */}
             {genres.map((genre) => (
               <tr key={genre.id}>
                 <td>{genre.id}</td>
-
-                <td>
-                  {editingId === genre.id ? (
-                    <input
-                      name="name"
-                      value={editData.name}
-                      onChange={handleChange}
-                    />
-                  ) : (
-                    genre.name
-                  )}
-                </td>
-
+                <td>{genre.name}</td>
                 <td className="action-cell">
-                  {editingId === genre.id ? (
-                    <>
-                      <button className="btn-save" onClick={handleSave}>
-                        💾 Lưu
-                      </button>
-                      <button className="btn-cancel" onClick={handleCancel}>
-                        ❌ Hủy
-                      </button>
-                    </>
-                  ) : (
-                    <>
+                  <div className="action-wrapper">
                       <button
                         className="btn-edit"
-                        onClick={() => handleEdit(genre)}
+                        onClick={() => openModal('edit', genre)}
                       >
                         ✏️ Sửa
                       </button>
@@ -194,14 +134,37 @@ const Genres = () => {
                       >
                         🗑 Xóa
                       </button>
-                    </>
-                  )}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* MODALS */}
+      {modalType && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>{modalType === 'add' ? "Thêm thể loại mới" : "Sửa thông tin thể loại"}</h3>
+            </div>
+            <div className="form-group">
+              <label>Tên thể loại</label>
+              <input 
+                name="name" 
+                value={formData.name} 
+                onChange={handleFormChange} 
+                placeholder="Nhập tên thể loại"
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="btn-save" onClick={handleSaveGenre}>💾 Lưu</button>
+              <button className="btn-cancel" onClick={closeModal}>❌ Hủy</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

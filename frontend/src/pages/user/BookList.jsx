@@ -18,13 +18,14 @@ const BookList = () => {
   const [search, setSearch] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("");
   const [selectedAuthor, setSelectedAuthor] = useState("");
+  const [selectedPriceRange, setSelectedPriceRange] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   // Reset về trang 1 mỗi khi thay đổi bộ lọc tìm kiếm/sắp xếp
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedGenre, selectedAuthor, sortBy]);
+  }, [search, selectedGenre, selectedAuthor, selectedPriceRange, sortBy]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -87,6 +88,17 @@ const BookList = () => {
       );
     }
 
+    if (selectedPriceRange) {
+      result = result.filter((book) => {
+        const price = book.price || 0;
+        if (selectedPriceRange === "under50k") return price < 50000;
+        if (selectedPriceRange === "50k-100k") return price >= 50000 && price <= 100000;
+        if (selectedPriceRange === "100k-200k") return price > 100000 && price <= 200000;
+        if (selectedPriceRange === "over200k") return price > 200000;
+        return true;
+      });
+    }
+
     switch (sortBy) {
 
       case "newest":
@@ -116,6 +128,7 @@ const BookList = () => {
     search,
     selectedGenre,
     selectedAuthor,
+    selectedPriceRange,
     sortBy,
   ]);
 
@@ -193,6 +206,21 @@ const BookList = () => {
                   </select>
                 </div>
 
+                {/* PRICE RANGE */}
+                <div className="filter-group">
+                  <label>Mức giá</label>
+                  <select 
+                    value={selectedPriceRange} 
+                    onChange={(e) => setSelectedPriceRange(e.target.value)}
+                  >
+                    <option value="">Tất cả mức giá</option>
+                    <option value="under50k">Dưới 50.000 ₫</option>
+                    <option value="50k-100k">Từ 50.000 ₫ - 100.000 ₫</option>
+                    <option value="100k-200k">Từ 100.000 ₫ - 200.000 ₫</option>
+                    <option value="over200k">Trên 200.000 ₫</option>
+                  </select>
+                </div>
+
                 {/* SORT */}
                 <div className="filter-group">
                   <label>Sắp xếp</label>
@@ -200,11 +228,8 @@ const BookList = () => {
                     value={sortBy} 
                     onChange={(e) => setSortBy(e.target.value)}
                   >
-                    <option value="">Sắp xếp</option>
                     <option value="newest">Mới nhất</option>
                     <option value="bestseller">Bán chạy</option>
-                    <option value="price-low">Giá thấp → cao</option>
-                    <option value="price-high">Giá cao → thấp</option>
                   </select>
                 </div>
 

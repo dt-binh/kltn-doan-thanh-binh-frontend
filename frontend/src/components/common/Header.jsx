@@ -60,10 +60,12 @@ const Header = () => {
             📚 Truyện mới
           </Link>
 
-          {/* Cart */}
-          <Link to="/cart" className="cart-link">
-            🛒 Giỏ hàng
-          </Link>
+          {/* Cart - Chỉ hiển thị khi đã đăng nhập */}
+          {user && (
+            <Link to="/cart" className="cart-link">
+              🛒 Giỏ hàng
+            </Link>
+          )}
 
           {/* Nếu đăng nhập */}
           {user ? (

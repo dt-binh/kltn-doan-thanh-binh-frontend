@@ -7,13 +7,9 @@ const Authors = () => {
   const navigate = useNavigate();
   const [authors, setAuthors] = useState([]);
 
-  // EDIT
-  const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({});
-
-  // ADD
-  const [isAdding, setIsAdding] = useState(false);
-  const [newAuthor, setNewAuthor] = useState({ name: "", country: "" });
+  // MODAL STATES
+  const [modalType, setModalType] = useState(null); // 'add' | 'edit'
+  const [formData, setFormData] = useState({ id: null, name: "", country: "" });
 
   const token = localStorage.getItem("token");
 
@@ -36,34 +32,47 @@ const Authors = () => {
     fetchAuthors();
   }, []);
 
-  // ================= EDIT =================
-  const handleEdit = (author) => {
-    setEditingId(author.id);
-    setEditData({ name: author.name, country: author.country });
+  // ================= MODAL ACTIONS =================
+  const openModal = (type, author = null) => {
+    setModalType(type);
+    if (author) {
+      setFormData({ ...author });
+    } else {
+      setFormData({ id: null, name: "", country: "" });
+    }
   };
 
-  const handleChange = (e) => {
-    setEditData({
-      ...editData,
+  const closeModal = () => {
+    setModalType(null);
+  };
+
+  const handleFormChange = (e) => {
+    setFormData({
+      ...formData,
       [e.target.name]: e.target.value,
     });
   };
 
-  const handleSave = async () => {
+  const handleSaveAuthor = async () => {
+    if (!formData.name) return alert("Nhập tên tác giả!");
+    if (!formData.country) return alert("Nhập quốc gia!");
+
     try {
-      await axios.put(`http://localhost:5000/api/authors/${editingId}`, editData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setEditingId(null);
+      if (modalType === "add") {
+        await axios.post("http://localhost:5000/api/authors", formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } else if (modalType === "edit") {
+        await axios.put(`http://localhost:5000/api/authors/${formData.id}`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+      closeModal();
       fetchAuthors();
     } catch (error) {
-      console.error("Lỗi cập nhật", error);
-      alert("Cập nhật thất bại");
+      console.error("Lỗi lưu tác giả", error);
+      alert("Lưu thất bại");
     }
-  };
-
-  const handleCancel = () => {
-    setEditingId(null);
   };
 
   // ================= DELETE =================
@@ -81,24 +90,6 @@ const Authors = () => {
     }
   };
 
-  // ================= ADD =================
-  const handleAdd = async () => {
-    if (!newAuthor.name) return alert("Nhập tên tác giả!");
-    if (!newAuthor.country) return alert("Nhập quốc gia!");
-
-    try {
-      await axios.post("http://localhost:5000/api/authors", newAuthor, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setNewAuthor({ name: "", country: "" });
-      setIsAdding(false);
-      fetchAuthors();
-    } catch (error) {
-      console.error("Lỗi thêm", error);
-      alert("Thêm thất bại");
-    }
-  };
-
   return (
     <div className="authors-page">
       {/* HEADER */}
@@ -107,7 +98,7 @@ const Authors = () => {
 
         <button
           className="authors-btn-add"
-          onClick={() => setIsAdding(!isAdding)}
+          onClick={() => openModal('add')}
         >
           ➕ Thêm tác giả
         </button>
@@ -126,89 +117,17 @@ const Authors = () => {
           </thead>
 
           <tbody>
-            {/* ADD ROW */}
-            {isAdding && (
-              <tr className="add-row">
-                <td>--</td>
-
-                <td>
-                  <input
-                    placeholder="Nhập tên tác giả"
-                    value={newAuthor.name}
-                    onChange={(e) =>
-                      setNewAuthor({ ...newAuthor, name: e.target.value })
-                    }
-                  />
-                </td>
-
-                <td>
-                  <input
-                    placeholder="Nhập quốc gia"
-                    value={newAuthor.country}
-                    onChange={(e) =>
-                      setNewAuthor({ ...newAuthor, country: e.target.value })
-                    }
-                  />
-                </td>
-
-                <td className="action-cell">
-                  <button className="btn-save" onClick={handleAdd}>
-                    💾 Lưu
-                  </button>
-                  <button
-                    className="btn-cancel"
-                    onClick={() => setIsAdding(false)}
-                  >
-                    ❌ Hủy
-                  </button>
-                </td>
-              </tr>
-            )}
-
             {/* DATA */}
             {authors.map((author) => (
               <tr key={author.id}>
                 <td>{author.id}</td>
-
-                <td>
-                  {editingId === author.id ? (
-                    <input
-                      name="name"
-                      value={editData.name}
-                      onChange={handleChange}
-                    />
-                  ) : (
-                    author.name
-                  )}
-                </td>
-
-                <td>
-                  {editingId === author.id ? (
-                    <input
-                      name="country"
-                      value={editData.country}
-                      onChange={handleChange}
-                    />
-                  ) : (
-                    author.country
-                  )}
-                </td>
-
+                <td>{author.name}</td>
+                <td>{author.country}</td>
                 <td className="action-cell">
-                  {editingId === author.id ? (
-                    <>
-                      <button className="btn-save" onClick={handleSave}>
-                        💾 Lưu
-                      </button>
-                      <button className="btn-cancel" onClick={handleCancel}>
-                        ❌ Hủy
-                      </button>
-                    </>
-                  ) : (
-                    <>
+                  <div className="action-wrapper">
                       <button
                         className="btn-edit"
-                        onClick={() => handleEdit(author)}
+                        onClick={() => openModal('edit', author)}
                       >
                         ✏️ Sửa
                       </button>
@@ -218,14 +137,46 @@ const Authors = () => {
                       >
                         🗑 Xóa
                       </button>
-                    </>
-                  )}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* MODALS */}
+      {modalType && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>{modalType === 'add' ? "Thêm tác giả mới" : "Sửa thông tin tác giả"}</h3>
+            </div>
+            <div className="form-group">
+              <label>Tên tác giả</label>
+              <input 
+                name="name" 
+                value={formData.name} 
+                onChange={handleFormChange} 
+                placeholder="Nhập tên tác giả"
+              />
+            </div>
+            <div className="form-group">
+              <label>Quốc gia</label>
+              <input 
+                name="country" 
+                value={formData.country} 
+                onChange={handleFormChange} 
+                placeholder="Nhập quốc gia"
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="btn-save" onClick={handleSaveAuthor}>💾 Lưu</button>
+              <button className="btn-cancel" onClick={closeModal}>❌ Hủy</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

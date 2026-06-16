@@ -8,6 +8,11 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const token = localStorage.getItem("token");
 
+  // State quản lý chi tiết đơn hàng
+  const [expandedOrder, setExpandedOrder] = useState(null);
+  const [orderDetails, setOrderDetails] = useState([]);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -50,6 +55,28 @@ const Orders = () => {
     }
   };
 
+  const handleToggleOrderDetails = async (orderId) => {
+    if (expandedOrder === orderId) {
+      setExpandedOrder(null);
+      return;
+    }
+
+    setDetailsLoading(true);
+    setExpandedOrder(orderId);
+    try {
+      const res = await axios.get(`http://localhost:5000/api/orders/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOrderDetails(res.data.items);
+    } catch (err) {
+      console.error("Lỗi lấy chi tiết đơn hàng:", err);
+      alert("Không thể tải chi tiết đơn hàng.");
+      setExpandedOrder(null);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
   return (
     <div className="admin-page">
       <h2>Quản lý đơn hàng ({orders.length})</h2>
@@ -63,11 +90,13 @@ const Orders = () => {
               <th>Phương thức TT</th>
               <th>Trạng thái</th>
               <th>Ngày đặt</th>
+              <th>Hành động</th>
             </tr>
           </thead>
           <tbody>
             {orders.map(order => (
-              <tr key={order.id}>
+              <React.Fragment key={order.id}>
+                <tr>
                 <td>DH{order.id.toString().padStart(4, '0')}</td>
                 <td>{order.username}</td>
                 <td>{order.total.toLocaleString()} ₫</td>
@@ -96,7 +125,52 @@ const Orders = () => {
                   </select>
                 </td>
                 <td>{new Date(order.order_date).toLocaleDateString("vi-VN")}</td>
-              </tr>
+                  <td>
+                    <button
+                      onClick={() => handleToggleOrderDetails(order.id)}
+                      style={{ padding: '6px 12px', background: expandedOrder === order.id ? '#6b7280' : '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+                    >
+                      {expandedOrder === order.id ? 'Ẩn' : 'Chi tiết'}
+                    </button>
+                  </td>
+                </tr>
+
+                {expandedOrder === order.id && (
+                  <tr>
+                    <td colSpan="7" style={{ padding: 0, borderBottom: '2px solid #e5e7eb' }}>
+                      <div style={{ padding: '15px 20px', background: '#f9fafb' }}>
+                        {detailsLoading ? (
+                          <p style={{ margin: 0, color: '#6b7280' }}>Đang tải thông tin sản phẩm...</p>
+                        ) : (
+                          <div>
+                            <h4 style={{ margin: '0 0 10px 0', color: '#374151', fontSize: '14px' }}>Sản phẩm trong đơn hàng:</h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                              {orderDetails.map(item => (
+                                <div key={item.book_id} style={{ display: 'flex', gap: '15px', alignItems: 'center', background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+                                  <img 
+                                    src={item.image || "https://via.placeholder.com/50x70"} 
+                                    alt={item.title} 
+                                    style={{ width: '40px', height: '55px', objectFit: 'cover', borderRadius: '4px' }} 
+                                  />
+                                  <div style={{ flex: 1 }}>
+                                    <p style={{ margin: '0 0 4px 0', fontWeight: '600', color: '#111827', fontSize: '14px' }}>{item.title}</p>
+                                    <p style={{ margin: 0, color: '#6b7280', fontSize: '13px' }}>
+                                      Số lượng: {item.quantity} x {item.price.toLocaleString()} ₫
+                                    </p>
+                                  </div>
+                                  <div style={{ fontWeight: 'bold', color: '#ef4444', fontSize: '15px' }}>
+                                    {(item.quantity * item.price).toLocaleString()} ₫
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>
