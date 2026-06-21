@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model authors {
+  id         Int     @id @default(autoincrement())
+  name       String  @unique(map: "name") @db.VarChar(150)
+  country    String? @db.VarChar(100)
+  book_count Int?    @default(0) @map("books")
+  books      books[]
+}
+
+model book_imports {
+  id           Int       @id @default(autoincrement())
+  book_id      Int?
+  quantity     Int?
+  import_price Int?
+  import_date  DateTime? @db.Date
+}
+
+model books {
+  id          Int           @id @default(autoincrement())
+  title       String        @db.VarChar(255)
+  author_id   Int
+  genre_id    Int
+  price       Int           @default(0)
+  rating      Decimal?      @default(0.00) @db.Decimal(3, 2)
+  views       Int?          @default(0)
+  image       String?       @db.VarChar(255)
+  description String?       @db.Text
+  created_at  DateTime?     @default(now()) @db.Timestamp(0)
+  updated_at  DateTime?     @default(now()) @db.Timestamp(0)
+  stock       Int?          @default(0)
+  authors     authors       @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "books_ibfk_1")
+  genres      genres        @relation(fields: [genre_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "books_ibfk_2")
+  cart_items  cart_items[]
+  order_items order_items[]
+  reviews     reviews[]
+
+  @@index([author_id], map: "author_id")
+  @@index([genre_id], map: "genre_id")
+}
+
+model cart_items {
+  id       Int   @id @default(autoincrement())
+  user_id  Int
+  book_id  Int
+  quantity Int?  @default(1)
+  users    users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "cart_items_ibfk_1")
+  books    books @relation(fields: [book_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "cart_items_ibfk_2")
+
+  @@index([book_id], map: "book_id")
+  @@index([user_id], map: "user_id")
+}
+
+model genres {
+  id         Int     @id @default(autoincrement())
+  name       String  @unique(map: "name") @db.VarChar(100)
+  book_count Int?    @default(0) @map("books")
+  books      books[]
+}
+
+model order_items {
+  id       Int    @id @default(autoincrement())
+  order_id Int
+  book_id  Int
+  quantity Int?   @default(1)
+  price    Int
+  orders   orders @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "order_items_ibfk_1")
+  books    books  @relation(fields: [book_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "order_items_ibfk_2")
+
+  @@index([book_id], map: "book_id")
+  @@index([order_id], map: "order_id")
+}
+
+model orders {
+  id             Int           @id @default(autoincrement())
+  user_id        Int
+  total          Int           @default(0)
+  status         String        @db.VarChar(50)
+  order_date     DateTime      @db.Date
+  payment_method String?       @default("cod") @db.VarChar(50)
+  order_items    order_items[]
+  users          users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "orders_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model reviews {
+  id         Int       @id @default(autoincrement())
+  book_id    Int
+  user_id    Int
+  rating     Int
+  comment    String?   @db.Text
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  books      books     @relation(fields: [book_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "reviews_ibfk_1")
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "reviews_ibfk_2")
+
+  @@index([book_id], map: "book_id")
+  @@index([user_id], map: "user_id")
+}
+
+model users {
+  id         Int           @id @default(autoincrement())
+  username   String        @unique(map: "username") @db.VarChar(50)
+  email      String        @unique(map: "email") @db.VarChar(100)
+  password   String        @db.VarChar(255)
+  avatar     String?       @default("default-avatar.png") @db.VarChar(255)
+  role       users_role?   @default(user)
+  status     users_status? @default(active)
+  phone      String?       @db.VarChar(20)
+  address    String?       @db.Text
+  created_at DateTime?     @default(now()) @db.Timestamp(0)
+  updated_at DateTime?     @default(now()) @db.Timestamp(0)
+  cart_items cart_items[]
+  orders     orders[]
+  reviews    reviews[]
+}
+
+enum users_role {
+  user
+  admin
+}
+
+enum users_status {
+  active
+  inactive
+}

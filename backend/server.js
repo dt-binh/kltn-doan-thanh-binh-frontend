@@ -1,15 +1,26 @@
 const express = require("express");
-const mysql = require("mysql2");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const { PrismaClient } = require("@prisma/client");
+const { PrismaMariaDb } = require("@prisma/adapter-mariadb");
 
 require("dotenv").config();
 
+const adapter = new PrismaMariaDb({
+  host: process.env.DB_HOST || "localhost",
+  port: 3306,
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "truyen_db",
+  connectionLimit: 10,
+});
+
 const app = express();
+const prisma = new PrismaClient({ adapter });
 
 // Tạo thư mục uploads nếu chưa có để lưu ảnh
 if (!fs.existsSync(path.join(__dirname, "uploads"))) {
@@ -22,176 +33,91 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
-// ================= MYSQL CONNECT =================
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
-
-db.connect((err) => {
-  if (err) {
-    console.log("Lỗi MySQL:", err);
-    return;
-  }
-
-  console.log("MySQL Connected");
-});
-
-
 // ================= HOME =================
 app.get("/", (req, res) => {
   res.send("API đang chạy...");
 });
 
+
 // ================= REGISTER =================
 app.post("/api/register", async (req, res) => {
   try {
-    const {
-      username,
-      email,
-      password,
-    } = req.body;
+    const { username, email, password } = req.body;
 
-    // kiểm tra dữ liệu
-    if (
-      !username ||
-      !email ||
-      !password
-    ) {
-      return res.status(400).json({
-        message: "Vui lòng nhập đầy đủ thông tin",
-      });
+    // Kiểm tra dữ liệu
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "Vui lòng nhập đầy đủ thông tin" });
     }
 
-    // kiểm tra email tồn tại
-    const checkSql =
-      "SELECT * FROM users WHERE email = ?";
+    // Kiểm tra email đã tồn tại
+    const existingUser = await prisma.users.findFirst({
+      where: { email },
+    });
 
-    db.query(
-      checkSql,
-      [email],
-      async (err, result) => {
-        if (err) {
-          return res.status(500).json(err);
-        }
+    if (existingUser) {
+      return res.status(400).json({ message: "Email đã tồn tại" });
+    }
 
-        // email đã tồn tại
-        if (result.length > 0) {
-          return res.status(400).json({
-            message: "Email đã tồn tại",
-          });
-        }
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-        // hash password
-        const hashedPassword =
-          await bcrypt.hash(password, 10);
+    // Tạo user mới
+    await prisma.users.create({
+      data: { username, email, password: hashedPassword },
+    });
 
-        // insert user
-        const sql = `
-          INSERT INTO users (
-            username,
-            email,
-            password
-          )
-          VALUES (?, ?, ?)
-        `;
-
-        db.query(
-          sql,
-          [
-            username,
-            email,
-            hashedPassword,
-          ],
-          (err, data) => {
-            if (err) {
-              return res.status(500).json(err);
-            }
-
-            res.status(201).json({
-              message:
-                "Đăng ký thành công",
-            });
-          }
-        );
-      }
-    );
+    res.status(201).json({ message: "Đăng ký thành công" });
   } catch (error) {
-    res.status(500).json(error);
+    res.status(500).json({ message: error.message });
   }
 });
 
 
 // ================= LOGIN =================
-app.post("/api/login", (req, res) => {
-  const { email, password } = req.body;
+app.post("/api/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-  // kiểm tra dữ liệu
-  if (!email || !password) {
-    return res.status(400).json({
-      message:
-        "Vui lòng nhập email (hoặc tên đăng nhập) và mật khẩu",
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Vui lòng nhập email (hoặc tên đăng nhập) và mật khẩu",
+      });
+    }
+
+    // Tìm user theo email hoặc username
+    const user = await prisma.users.findFirst({
+      where: {
+        OR: [{ email }, { username: email }],
+      },
     });
-  }
 
-  // tìm user
-  const sql =
-    "SELECT * FROM users WHERE email = ? OR username = ?";
-
-  db.query(sql, [email, email], async (err, result) => {
-    if (err) {
-      return res.status(500).json(err);
+    if (!user) {
+      return res.status(400).json({ message: "Tài khoản không tồn tại" });
     }
 
-    // không tìm thấy email
-    if (result.length === 0) {
-      return res.status(400).json({
-        message: "Tài khoản không tồn tại",
-      });
-    }
-
-    const user = result[0];
-
-    // so sánh password
-    const isMatch = await bcrypt.compare(
-      password,
-      user.password
-    );
-
-    // sai password
+    // So sánh password
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({
-        message: "Sai mật khẩu",
-      });
+      return res.status(400).json({ message: "Sai mật khẩu" });
     }
 
-    // kiểm tra trạng thái khóa tài khoản
-    if (user.status === 'inactive') {
+    // Kiểm tra trạng thái khóa tài khoản
+    if (user.status === "inactive") {
       return res.status(403).json({
         message: "Tài khoản của bạn đã bị khóa bởi quản trị viên",
       });
     }
 
-    // tạo JWT token
+    // Tạo JWT token
     const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
+      { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
+      { expiresIn: "7d" }
     );
 
-    // trả dữ liệu
     res.json({
       message: "Đăng nhập thành công",
       token,
-
       user: {
         id: user.id,
         username: user.username,
@@ -199,40 +125,28 @@ app.post("/api/login", (req, res) => {
         role: user.role,
       },
     });
-  });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 
 // ================= VERIFY TOKEN =================
 const verifyToken = (req, res, next) => {
-  const authHeader =
-    req.headers["authorization"];
-
-  const token =
-    authHeader &&
-    authHeader.split(" ")[1];
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
-    return res.status(401).json({
-      message: "Không có token",
-    });
+    return res.status(401).json({ message: "Không có token" });
   }
 
-  jwt.verify(
-    token,
-    process.env.JWT_SECRET,
-    (err, user) => {
-      if (err) {
-        return res.status(403).json({
-          message: "Token không hợp lệ",
-        });
-      }
-
-      req.user = user;
-
-      next();
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: "Token không hợp lệ" });
     }
-  );
+    req.user = user;
+    next();
+  });
 };
 
 
@@ -242,10 +156,10 @@ const storage = multer.diskStorage({
     cb(null, path.join(__dirname, "uploads/"));
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
+    cb(null, Date.now() + "-" + Math.round(Math.random() * 1e9) + path.extname(file.originalname));
   },
 });
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
 app.post("/api/upload", verifyToken, upload.single("image"), (req, res) => {
   if (!req.file) {
@@ -257,844 +171,996 @@ app.post("/api/upload", verifyToken, upload.single("image"), (req, res) => {
 
 
 // ================= GET USERS =================
-app.get("/api/users", (req, res) => {
-  const sql = `
-    SELECT
-      id,
-      username,
-      email,
-      role,
-      status,
-      created_at
-    FROM users
-  `;
-
-  db.query(sql, (err, result) => {
-    if (err) {
-      return res.status(500).json(err);
-    }
-
-    res.json(result);
-  });
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await prisma.users.findMany({
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        status: true,
+        created_at: true,
+      },
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 
 // ================= UPDATE USER STATUS (ADMIN) =================
-app.put("/api/users/:id/status", verifyToken, (req, res) => {
-  if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
-  
-  const { id } = req.params;
-  const { status } = req.body;
-  
-  const sql = "UPDATE users SET status = ? WHERE id = ?";
-  db.query(sql, [status, id], (err) => {
-    if (err) return res.status(500).json(err);
+app.put("/api/users/:id/status", verifyToken, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
+  }
+
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    await prisma.users.update({
+      where: { id: parseInt(id) },
+      data: { status },
+    });
+
     res.json({ message: "Cập nhật trạng thái người dùng thành công" });
-  });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= DELETE USER (ADMIN) =================
+app.delete("/api/users/:id", verifyToken, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
+  }
+
+  try {
+    await prisma.users.delete({ where: { id: parseInt(req.params.id) } });
+    res.json({ message: "Xóa người dùng thành công" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 
 // ================= PROFILE =================
-app.get(
-  "/api/profile",
-  verifyToken,
-  (req, res) => {
-    const sql = "SELECT id, username, email, role, status, phone, address FROM users WHERE id = ?";
-    db.query(sql, [req.user.id], (err, result) => {
-      if (err) return res.status(500).json(err);
-      if (result.length === 0) return res.status(404).json({ message: "Không tìm thấy người dùng" });
-      
-      res.json({
-        message: "Lấy profile thành công",
-        user: result[0],
-      });
+app.get("/api/profile", verifyToken, async (req, res) => {
+  try {
+    const user = await prisma.users.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        status: true,
+        phone: true,
+        address: true,
+      },
     });
+
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    res.json({ message: "Lấy profile thành công", user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-);
+});
+
 
 // ================= UPDATE PROFILE =================
-app.put("/api/profile", verifyToken, (req, res) => {
-  const { name, phone, address } = req.body;
-  const sql = "UPDATE users SET username = ?, phone = ?, address = ? WHERE id = ?";
-  db.query(sql, [name, phone, address, req.user.id], (err) => {
-    if (err) return res.status(500).json(err);
+app.put("/api/profile", verifyToken, async (req, res) => {
+  try {
+    const { name, phone, address } = req.body;
+
+    await prisma.users.update({
+      where: { id: req.user.id },
+      data: { username: name, phone, address },
+    });
+
     res.json({ message: "Cập nhật profile thành công" });
-  });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
+
 
 // ================= GET ADMIN STATS =================
 app.get("/api/admin/stats", verifyToken, async (req, res) => {
-  if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền" });
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền" });
+  }
 
-  // Lấy năm từ query, hỗ trợ riêng biệt năm cho biểu đồ doanh thu và số lượng bán
-  const revenueYear = req.query.revenueYear || req.query.year || new Date().getFullYear();
-  const salesYear = req.query.salesYear || req.query.year || new Date().getFullYear();
+  const revenueYear = parseInt(req.query.revenueYear || req.query.year || new Date().getFullYear());
+  const salesYear = parseInt(req.query.salesYear || req.query.year || new Date().getFullYear());
 
   try {
-    //hàm hỗ trợ để thực hiện truy vấn đếm số lượng bản ghi cho từng bảng
-    const getCount = (query) => new Promise((resolve, reject) => {
-      db.query(query, (err, result) => {
-        if (err) reject(err);
-        else resolve(result[0].count);
-      });
+    // Đếm số lượng
+    const [usersCount, booksCount, ordersCount] = await Promise.all([
+      prisma.users.count({ where: { role: "user" } }),
+      prisma.books.count(),
+      prisma.orders.count(),
+    ]);
+
+    // Tổng doanh thu
+    const revenueResult = await prisma.orders.aggregate({
+      _sum: { total: true },
+      where: { status: "Đã giao" },
+    });
+    const revenue = revenueResult._sum.total || 0;
+
+    // Tổng tồn kho
+    const stockResult = await prisma.books.aggregate({ _sum: { stock: true } });
+    const totalStock = stockResult._sum.stock || 0;
+
+    // Doanh thu theo tháng
+    const monthlyRevenueRaw = await prisma.orders.groupBy({
+      by: ["order_date"],
+      _sum: { total: true },
+      where: {
+        status: "Đã giao",
+        order_date: {
+          gte: new Date(`${revenueYear}-01-01`),
+          lte: new Date(`${revenueYear}-12-31`),
+        },
+      },
     });
 
-    const getTotalRevenue = () => new Promise((resolve, reject) => {
-      db.query("SELECT SUM(total) as revenue FROM orders WHERE status = 'Đã giao'", (err, result) => {
-        if (err) reject(err);
-        else resolve(result[0].revenue || 0);
-      });
+    // Số sách bán theo tháng
+    const deliveredOrdersWithItems = await prisma.orders.findMany({
+      where: {
+        status: "Đã giao",
+        order_date: {
+          gte: new Date(`${salesYear}-01-01`),
+          lte: new Date(`${salesYear}-12-31`),
+        },
+      },
+      include: {
+        order_items: { select: { quantity: true } },
+      },
     });
 
-    const getMonthlyRevenue = () => new Promise((resolve, reject) => {
-      const query = `
-        SELECT MONTH(order_date) as month, SUM(total) as revenue 
-        FROM orders 
-        WHERE status = 'Đã giao' AND YEAR(order_date) = ? 
-        GROUP BY MONTH(order_date)
-      `;
-      db.query(query, [revenueYear], (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
+    // Nhập kho theo tháng
+    let importedRecords = [];
+    try {
+      importedRecords = await prisma.book_imports.findMany({
+        where: {
+          import_date: {
+            gte: new Date(`${salesYear}-01-01`),
+            lte: new Date(`${salesYear}-12-31`),
+          },
+        },
+        select: { import_date: true, quantity: true },
       });
-    });
-      const getTotalStock = () => new Promise((resolve, reject) => {
-      db.query("SELECT SUM(stock) as totalStock FROM books", (err, result) => {
-        if (err) reject(err);
-        else resolve(result[0].totalStock || 0);
-      });
-    });
+    } catch (e) {
+      // Bảng book_imports chưa tồn tại
+      importedRecords = [];
+    }
 
-    const getMonthlySold = () => new Promise((resolve, reject) => {
-      const query = `
-        SELECT MONTH(orders.order_date) as month, SUM(order_items.quantity) as sold 
-        FROM order_items 
-        JOIN orders ON order_items.order_id = orders.id 
-        WHERE orders.status = 'Đã giao' AND YEAR(orders.order_date) = ? 
-        GROUP BY MONTH(orders.order_date)
-      `;
-      db.query(query, [salesYear], (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
-
-    const getMonthlyImported = () => new Promise((resolve, reject) => {
-      const query = `
-        SELECT MONTH(import_date) as month, SUM(quantity) as imported 
-        FROM book_imports 
-        WHERE YEAR(import_date) = ? 
-        GROUP BY MONTH(import_date)
-      `;
-      db.query(query, [salesYear], (err, result) => {
-        if (err) {
-          // Bắt lỗi nếu bảng book_imports chưa được tạo
-          if (err.code === 'ER_NO_SUCH_TABLE') resolve([]);
-          else reject(err);
-        }
-        else resolve(result);
-      });
-    });
-    //lấy số lượng người dùng, sách, đơn hàng và tổng doanh thu từ cơ sở dữ liệu, đồng thời tính doanh thu theo tháng trong năm hiện tại để hiển thị biểu đồ trên dashboard admin
-    const usersCount = await getCount("SELECT COUNT(*) as count FROM users WHERE role = 'user'");
-    const booksCount = await getCount("SELECT COUNT(*) as count FROM books");
-    const ordersCount = await getCount("SELECT COUNT(*) as count FROM orders");
-    const revenue = await getTotalRevenue();
-    const monthlyRevenueData = await getMonthlyRevenue();
-    const totalStock = await getTotalStock();
-    const monthlySoldData = await getMonthlySold();
-    const monthlyImportedData = await getMonthlyImported();
-
+    // Tính doanh thu theo tháng
     const revenueByMonth = new Array(12).fill(0);
-    monthlyRevenueData.forEach(item => {
-      revenueByMonth[item.month - 1] = Number(item.revenue) || 0;
+    monthlyRevenueRaw.forEach((item) => {
+      const month = new Date(item.order_date).getMonth(); // 0-indexed
+      revenueByMonth[month] += Number(item._sum.total) || 0;
     });
-     const soldByMonth = new Array(12).fill(0);
-    monthlySoldData.forEach(item => {
-      soldByMonth[item.month - 1] = Number(item.sold) || 0;
+
+    const soldByMonth = new Array(12).fill(0);
+    deliveredOrdersWithItems.forEach((order) => {
+      const month = new Date(order.order_date).getMonth(); // 0-indexed
+      const qty = order.order_items.reduce((sum, i) => sum + (i.quantity || 0), 0);
+      soldByMonth[month] += qty;
     });
+
     const importedByMonth = new Array(12).fill(0);
-    monthlyImportedData.forEach(item => {
-      importedByMonth[item.month - 1] = Number(item.imported) || 0;
+    importedRecords.forEach((record) => {
+      if (record.import_date) {
+        const month = new Date(record.import_date).getMonth(); // 0-indexed
+        importedByMonth[month] += record.quantity || 0;
+      }
     });
-    //trả kq cho fe
+
     res.json({
-      totalStock: totalStock,
+      totalStock,
       users: usersCount,
       books: booksCount,
       orders: ordersCount,
-      revenue: revenue,
-      revenueByMonth: revenueByMonth,
-      soldByMonth: soldByMonth,
-      importedByMonth: importedByMonth
+      revenue,
+      revenueByMonth,
+      soldByMonth,
+      importedByMonth,
     });
   } catch (error) {
-    res.status(500).json(error);
+    res.status(500).json({ message: error.message });
   }
 });
 
 
 // ================= GET BOOKS =================
-app.get("/api/books", (req, res) => {
-  const sql = `
-    SELECT
-      books.*,
-      authors.name AS author_name,
-      genres.name AS genre_name
-    FROM books
-    LEFT JOIN authors ON books.author_id = authors.id
-    LEFT JOIN genres ON books.genre_id = genres.id
-  `;
+app.get("/api/books", async (req, res) => {
+  try {
+    const books = await prisma.books.findMany({
+      include: {
+        authors: { select: { name: true } },
+        genres: { select: { name: true } },
+      },
+    });
 
-  db.query(sql, (err, result) => {
-    if (err) {
-      return res.status(500).json(err);
-    }
+    // Flatten author_name và genre_name
+    const result = books.map((b) => ({
+      ...b,
+      author_name: b.authors?.name,
+      genre_name: b.genres?.name,
+    }));
+
     res.json(result);
-  });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 
 // ================= GET BOOK BY ID =================
-app.get("/api/books/:id", (req, res) => {
-  const { id } = req.params;
+app.get("/api/books/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
 
-  // 1. Tăng lượt xem (cộng thêm 1)
-  const updateViewsSql = "UPDATE books SET views = COALESCE(views, 0) + 1 WHERE id = ?";
-  db.query(updateViewsSql, [id], (updateErr) => {
-    if (updateErr) console.error("Lỗi cập nhật lượt xem:", updateErr);
-
-    // 2. Lấy thông tin sách trả về cho frontend
-    const sql = `
-      SELECT
-        books.*,
-        authors.name AS author_name,
-        genres.name AS genre_name
-      FROM books
-      LEFT JOIN authors ON books.author_id = authors.id
-      LEFT JOIN genres ON books.genre_id = genres.id
-      WHERE books.id = ?
-    `;
-
-    db.query(sql, [id], (err, result) => {
-      if (err) {
-        return res.status(500).json(err);
-      }
-      if (result.length === 0) {
-        return res.status(404).json({ message: "Không tìm thấy sách" });
-      }
-      res.json(result[0]);
+    // Tăng lượt xem
+    await prisma.books.update({
+      where: { id },
+      data: { views: { increment: 1 } },
     });
-  });
+
+    // Lấy thông tin sách
+    const book = await prisma.books.findUnique({
+      where: { id },
+      include: {
+        authors: { select: { name: true } },
+        genres: { select: { name: true } },
+      },
+    });
+
+    if (!book) {
+      return res.status(404).json({ message: "Không tìm thấy sách" });
+    }
+
+    res.json({
+      ...book,
+      author_name: book.authors?.name,
+      genre_name: book.genres?.name,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
+
 
 // ================= GET REVIEWS FOR A BOOK =================
-app.get("/api/books/:id/reviews", (req, res) => {
-  const { id } = req.params;
-  const sql = `
-    SELECT reviews.*, users.username 
-    FROM reviews 
-    JOIN users ON reviews.user_id = users.id 
-    WHERE book_id = ? 
-    ORDER BY created_at DESC
-  `;
-  db.query(sql, [id], (err, result) => {
-    if (err) return res.status(500).json(err);
+app.get("/api/books/:id/reviews", async (req, res) => {
+  try {
+    const book_id = parseInt(req.params.id);
+    const reviews = await prisma.reviews.findMany({
+      where: { book_id },
+      include: { users: { select: { username: true } } },
+      orderBy: { created_at: "desc" },
+    });
+
+    const result = reviews.map((r) => ({
+      ...r,
+      username: r.users?.username,
+    }));
+
     res.json(result);
-  });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
+
 
 // ================= ADD A REVIEW =================
-app.post("/api/books/:id/reviews", verifyToken, (req, res) => {
-  const { id } = req.params; // book_id
-  const { rating, comment, image } = req.body;
-  const user_id = req.user.id;
+app.post("/api/books/:id/reviews", verifyToken, async (req, res) => {
+  try {
+    const book_id = parseInt(req.params.id);
+    const { rating, comment, image } = req.body;
+    const user_id = req.user.id;
 
-  if (!rating || rating < 1 || rating > 5) {
-    return res.status(400).json({ message: "Vui lòng chọn số sao hợp lệ (1-5)" });
-  }
-
-  const checkOrderSql = "SELECT orders.id FROM orders JOIN order_items ON orders.id = order_items.order_id WHERE orders.user_id = ? AND order_items.book_id = ? AND orders.status = 'Đã giao'";
-  db.query(checkOrderSql, [user_id, id], (err, orderResults) => {
-    if (err) return res.status(500).json(err);
-    if (orderResults.length === 0) {
-      return res.status(400).json({ message: "Bạn chỉ có thể đánh giá khi đơn hàng đã giao thành công" });
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: "Vui lòng chọn số sao hợp lệ (1-5)" });
     }
 
-    const checkSql = "SELECT * FROM reviews WHERE book_id = ? AND user_id = ?";
-    db.query(checkSql, [id, user_id], (err, results) => {
-      if (err) return res.status(500).json(err);
-      if (results.length > 0) return res.status(400).json({ message: "Bạn đã đánh giá truyện này rồi" });
-
-      const insertSql = "INSERT INTO reviews (book_id, user_id, rating, comment, image) VALUES (?, ?, ?, ?, ?)";
-      db.query(insertSql, [id, user_id, rating, comment, image || null], (err, result) => {
-        if (err) {
-          // Bắt lỗi nếu bảng reviews chưa có cột image (fallback an toàn để ứng dụng không bị sập)
-          if (err.code === 'ER_BAD_FIELD_ERROR') {
-            const fallbackSql = "INSERT INTO reviews (book_id, user_id, rating, comment) VALUES (?, ?, ?, ?)";
-            db.query(fallbackSql, [id, user_id, rating, comment], (err2, result2) => {
-              if (err2) return res.status(500).json(err2);
-              updateBookRating(res);
-            });
-            return;
-          }
-          return res.status(500).json(err);
-        }
-        updateBookRating(res);
-      });
-
-      function updateBookRating(resObj) {
-        const updateRatingSql = "UPDATE books SET rating = (SELECT AVG(rating) FROM reviews WHERE book_id = ?) WHERE id = ?";
-        db.query(updateRatingSql, [id, id], (err) => {
-          if (err) console.error("Lỗi cập nhật rating sách", err);
-          resObj.status(201).json({ message: "Thêm đánh giá thành công" });
-        });
-      }
+    // Kiểm tra đã mua và nhận hàng chưa
+    const deliveredOrder = await prisma.orders.findFirst({
+      where: {
+        user_id,
+        status: "Đã giao",
+        order_items: { some: { book_id } },
+      },
     });
-  });
+
+    if (!deliveredOrder) {
+      return res.status(400).json({
+        message: "Bạn chỉ có thể đánh giá khi đơn hàng đã giao thành công",
+      });
+    }
+
+    // Kiểm tra đã đánh giá chưa
+    const existing = await prisma.reviews.findFirst({
+      where: { book_id, user_id },
+    });
+
+    if (existing) {
+      return res.status(400).json({ message: "Bạn đã đánh giá truyện này rồi" });
+    }
+
+    // Thêm review
+    await prisma.reviews.create({
+      data: { book_id, user_id, rating, comment: comment || null },
+    });
+
+    // Cập nhật rating trung bình của sách
+    const avgRating = await prisma.reviews.aggregate({
+      _avg: { rating: true },
+      where: { book_id },
+    });
+
+    await prisma.books.update({
+      where: { id: book_id },
+      data: { rating: avgRating._avg.rating || 0 },
+    });
+
+    res.status(201).json({ message: "Thêm đánh giá thành công" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
+
 
 // ================= CREATE BOOK (ADMIN) =================
-app.post("/api/books", verifyToken, (req, res) => {
-  if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
-  
-  const { title, author_id, genre_id, price, stock, image, description, import_price } = req.body;
-  const sql = "INSERT INTO books (title, author_id, genre_id, price, stock, image, description) VALUES (?, ?, ?, ?, ?, ?, ?)";
-  
-  const newStock = stock || 0;
-  const impPrice = import_price || 0;
-  db.query(sql, [title, author_id, genre_id, price, newStock, image, description], (err, result) => {
-    if (err) return res.status(500).json(err);
-    if (newStock > 0) {
-      db.query("CREATE TABLE IF NOT EXISTS book_imports (id INT AUTO_INCREMENT PRIMARY KEY, book_id INT, quantity INT, import_price INT, import_date DATE)");
-      db.query("INSERT INTO book_imports (book_id, quantity, import_price, import_date) VALUES (?, ?, ?, CURDATE())", [result.insertId, newStock, impPrice]);
-    }
-    res.status(201).json({ message: "Thêm sách thành công", id: result.insertId });
-  });
-});
-
-// ================= UPDATE BOOK (ADMIN) =================
-app.put("/api/books/:id", verifyToken, (req, res) => {
-  if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
-  
-  const { id } = req.params;
-  const { title, author_id, genre_id, price, stock, image, description, import_price } = req.body;
-  const sql = "UPDATE books SET title=?, author_id=?, genre_id=?, price=?, stock=?, image=?, description=? WHERE id=?";
-  
-  db.query("SELECT stock FROM books WHERE id = ?", [id], (err, results) => {
-    if (err) return res.status(500).json(err);
-    const oldStock = results.length > 0 ? results[0].stock : 0;
-    const newStock = stock || 0;
-    const importedQty = newStock - oldStock;
-    const impPrice = import_price || 0;
-
-    db.query(sql, [title, author_id, genre_id, price, newStock, image, description, id], (err) => {
-      if (err) return res.status(500).json(err);
-      if (importedQty > 0) {
-        db.query("CREATE TABLE IF NOT EXISTS book_imports (id INT AUTO_INCREMENT PRIMARY KEY, book_id INT, quantity INT, import_price INT, import_date DATE)");
-        db.query("INSERT INTO book_imports (book_id, quantity, import_price, import_date) VALUES (?, ?, ?, CURDATE())", [id, importedQty, impPrice]);
-      }
-      res.json({ message: "Cập nhật sách thành công" });
-    });
-  });
-});
-
-// ================= DELETE BOOK (ADMIN) =================
-app.delete("/api/books/:id", verifyToken, (req, res) => {
-  if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
-  
-  const { id } = req.params;
-  const sql = "DELETE FROM books WHERE id=?";
-  db.query(sql, [id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Xóa sách thành công" });
-  });
-});
-
-
-// ================= GET GENRES =================
-app.get("/api/genres", (req, res) => {
-  const sql = "SELECT * FROM genres";
-
-  db.query(sql, (err, result) => {
-    if (err) {
-      return res.status(500).json(err);
-    }
-    res.json(result);
-  });
-});
-
-
-// ================= GET AUTHORS =================
-app.get("/api/authors", (req, res) => {
-  const sql = "SELECT * FROM authors";
-
-  db.query(sql, (err, result) => {
-    if (err) {
-      return res.status(500).json(err);
-    }
-    res.json(result);
-  });
-});
-
-
-// ================= CREATE GENRE (ADMIN) =================
-app.post("/api/genres", verifyToken, (req, res) => {
-  if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
-  const { name } = req.body;
-  db.query("INSERT INTO genres (name) VALUES (?)", [name], (err, result) => {
-    if (err) return res.status(500).json(err);
-    res.status(201).json({ message: "Thêm thể loại thành công", id: result.insertId });
-  });
-});
-
-// ================= UPDATE GENRE (ADMIN) =================
-app.put("/api/genres/:id", verifyToken, (req, res) => {
-  if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
-  const { name } = req.body;
-  db.query("UPDATE genres SET name=? WHERE id=?", [name, req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Cập nhật thể loại thành công" });
-  });
-});
-
-// ================= DELETE GENRE (ADMIN) =================
-app.delete("/api/genres/:id", verifyToken, (req, res) => {
-  if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
-  db.query("DELETE FROM genres WHERE id=?", [req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Xóa thể loại thành công" });
-  });
-});
-
-// ================= CREATE AUTHOR (ADMIN) =================
-app.post("/api/authors", verifyToken, (req, res) => {
-  if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
-  const { name, country } = req.body;
-  db.query("INSERT INTO authors (name, country) VALUES (?, ?)", [name, country], (err, result) => {
-    if (err) return res.status(500).json(err);
-    res.status(201).json({ message: "Thêm tác giả thành công", id: result.insertId });
-  });
-});
-
-// ================= UPDATE AUTHOR (ADMIN) =================
-app.put("/api/authors/:id", verifyToken, (req, res) => {
-  if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
-  const { name, country } = req.body;
-  db.query("UPDATE authors SET name=?, country=? WHERE id=?", [name, country, req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Cập nhật tác giả thành công" });
-  });
-});
-
-// ================= DELETE AUTHOR (ADMIN) =================
-app.delete("/api/authors/:id", verifyToken, (req, res) => {
-  if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
-  db.query("DELETE FROM authors WHERE id=?", [req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Xóa tác giả thành công" });
-  });
-});
-
-// ================= DELETE USER (ADMIN) =================
-app.delete("/api/users/:id", verifyToken, (req, res) => {
-  if (req.user.role !== "admin") return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
-  db.query("DELETE FROM users WHERE id = ?", [req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Xóa người dùng thành công" });
-  });
-});
-
-
-// ================= CART =================
-app.get("/api/cart", verifyToken, (req, res) => {
-  const sql = `
-    SELECT cart_items.id, cart_items.quantity, books.id AS book_id, books.title, books.price, books.image, books.stock
-    FROM cart_items
-    JOIN books ON cart_items.book_id = books.id
-    WHERE cart_items.user_id = ?
-  `;
-
-  db.query(sql, [req.user.id], (err, result) => {
-    if (err) return res.status(500).json(err);
-    res.json(result);
-  });
-});
-
-app.post("/api/cart", verifyToken, (req, res) => {
-  const { book_id, quantity = 1 } = req.body;
-  const user_id = req.user.id;
-
-  db.query("SELECT stock FROM books WHERE id = ?", [book_id], (err, bookRes) => {
-    if (err) return res.status(500).json(err);
-    if (bookRes.length === 0) return res.status(404).json({ message: "Không tìm thấy sách" });
-    
-    const stock = bookRes[0].stock;
-
-    const checkSql = "SELECT * FROM cart_items WHERE user_id = ? AND book_id = ?";
-    db.query(checkSql, [user_id, book_id], (err, result) => {
-      if (err) return res.status(500).json(err);
-  
-      if (result.length > 0) {
-        const newQuantity = result[0].quantity + quantity;
-        if (newQuantity > stock) return res.status(400).json({ message: "Số lượng trong kho không đủ" });
-        const updateSql = "UPDATE cart_items SET quantity = ? WHERE id = ?";
-        db.query(updateSql, [newQuantity, result[0].id], (err) => {
-          if (err) return res.status(500).json(err);
-          res.json({ message: "Đã cập nhật số lượng trong giỏ hàng" });
-        });
-      } else {
-        if (quantity > stock) return res.status(400).json({ message: "Số lượng trong kho không đủ" });
-        const insertSql = "INSERT INTO cart_items (user_id, book_id, quantity) VALUES (?, ?, ?)";
-        db.query(insertSql, [user_id, book_id, quantity], (err) => {
-          if (err) return res.status(500).json(err);
-          res.status(201).json({ message: "Đã thêm vào giỏ hàng" });
-        });
-      }
-    });
-  });
-});
-
-app.delete("/api/cart/:id", verifyToken, (req, res) => {
-  const { id } = req.params;
-  const user_id = req.user.id;
-
-  const sql = "DELETE FROM cart_items WHERE id = ? AND user_id = ?";
-  db.query(sql, [id, user_id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Đã xóa khỏi giỏ hàng" });
-  });
-});
-
-
-// ================= GET ORDERS =================
-app.get("/api/orders", verifyToken, (req, res) => {
-  let sql = "";
-  let params = [];
-
-  // Admin có thể thấy tất cả đơn hàng, trong khi User chỉ lấy được đơn hàng của chính mình.
-  if (req.user.role === "admin") {
-    sql = `
-      SELECT orders.*, users.username, users.email
-      FROM orders
-      JOIN users ON orders.user_id = users.id
-      ORDER BY orders.order_date DESC
-    `;
-  } else {
-    sql = `
-      SELECT * FROM orders
-      WHERE user_id = ?
-      ORDER BY order_date DESC
-    `;
-    params = [req.user.id];
-  }
-
-  db.query(sql, params, (err, result) => {
-    if (err) {
-      return res.status(500).json(err);
-    }
-    res.json(result);
-  });
-});
-
-
-// ================= CREATE ORDER (CHECKOUT) =================
-app.post("/api/orders", verifyToken, (req, res) => {
-  const { payment_method = 'cod' } = req.body;
-  const user_id = req.user.id;
-  const status = payment_method === 'qr' ? 'Chờ thanh toán' : 'Đang xử lí';
-  const order_date = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
-
-  // 1. Lấy thông tin giỏ hàng của user kèm giá sách
-  const cartSql = `
-    SELECT c.book_id, c.quantity, b.price, b.stock, b.title
-    FROM cart_items c
-    JOIN books b ON c.book_id = b.id
-    WHERE c.user_id = ?
-  `;
-
-  db.query(cartSql, [user_id], (err, cartItems) => {
-    if (err) return res.status(500).json(err);
-    if (cartItems.length === 0) {
-      return res.status(400).json({ message: "Giỏ hàng của bạn đang trống" });
-    }
-
-    // Kiểm tra số lượng tồn kho trước khi đặt hàng
-    for (let item of cartItems) {
-      if (item.quantity > item.stock) {
-        return res.status(400).json({ message: `Truyện "${item.title}" chỉ còn ${item.stock} quyển trong kho. Vui lòng cập nhật lại giỏ hàng!` });
-      }
-    }
-
-    // 2. Tính tổng tiền
-    let total = 0;
-    cartItems.forEach(item => {
-      total += item.price * item.quantity;
-    });
-
-    // 3. Tạo đơn hàng mới
-    const insertOrderSql = "INSERT INTO orders (user_id, total, status, order_date, payment_method) VALUES (?, ?, ?, ?, ?)";
-    db.query(insertOrderSql, [user_id, total, status, order_date, payment_method], (err, orderResult) => {
-      if (err) return res.status(500).json(err);
-
-      const order_id = orderResult.insertId;
-
-      // 4. Thêm chi tiết đơn hàng (order_items)
-      const orderItemsData = cartItems.map(item => [order_id, item.book_id, item.quantity, item.price]);
-      const insertOrderItemsSql = "INSERT INTO order_items (order_id, book_id, quantity, price) VALUES ?";
-      
-      db.query(insertOrderItemsSql, [orderItemsData], (err) => {
-        if (err) return res.status(500).json(err);
-
-        // 5. Xóa giỏ hàng sau khi đặt hàng thành công
-        const clearCartSql = "DELETE FROM cart_items WHERE user_id = ?";
-        db.query(clearCartSql, [user_id], (err) => {
-          if (err) return res.status(500).json(err);
-
-          // 6. Trừ số lượng sách trong kho
-          let completedUpdates = 0;
-          cartItems.forEach(item => {
-            db.query("UPDATE books SET stock = GREATEST(stock - ?, 0) WHERE id = ?", [item.quantity, item.book_id], () => {
-              completedUpdates++;
-              if (completedUpdates === cartItems.length) {
-                res.status(201).json({
-                  message: "Đặt hàng thành công",
-                  order_id: order_id
-                });
-              }
-            });
-          });
-          if (cartItems.length === 0) {
-            res.status(201).json({ message: "Đặt hàng thành công", order_id });
-          }
-        });
-      });
-    });
-  });
-});
-
-// ================= SEPAY WEBHOOK (AUTO CONFIRM PAYMENT) =================
-app.post("/api/webhook/sepay", (req, res) => {
-  // Dữ liệu mẫu từ SePay (Gateway có thể là MBBank, Vietcombank...)
-  const { transferType, transferAmount, content } = req.body;
-
-  // Chỉ xử lý giao dịch tiền vào (Nhận tiền)
-  if (transferType === "in") {
-    // Tìm mã đơn hàng trong nội dung chuyển khoản (Ví dụ: khách ghi "DH0012")
-    // Regex tìm chữ DH theo sau là các chữ số
-    const match = content.match(/DH(\d+)/i);
-    
-    if (match) {
-      const orderId = parseInt(match[1], 10);
-
-      // Kiểm tra đơn hàng trong Database
-      const checkOrderSql = "SELECT * FROM orders WHERE id = ?";
-      db.query(checkOrderSql, [orderId], (err, results) => {
-        if (!err && results.length > 0) {
-          const order = results[0];
-          
-          // Kiểm tra xem đơn hàng có ở trạng thái "Chờ thanh toán" và số tiền gửi có đủ không
-          if (order.status === 'Chờ thanh toán' && transferAmount >= order.total) {
-            // Cập nhật trạng thái thành "Đang xử lí"
-            const updateSql = "UPDATE orders SET status = 'Đang xử lí' WHERE id = ?";
-            db.query(updateSql, [orderId], (updateErr) => {
-              if (!updateErr) {
-                console.log(`✅ [Webhook] Đã tự động xác nhận đơn hàng DH${orderId.toString().padStart(4, "0")}`);
-              }
-            });
-          }
-        }
-      });
-    }
-  }
-
-  // Luôn trả về 200 OK cho SePay
-  res.status(200).json({ success: true });
-});
-
-// ================= GET ORDERS BY USER ID (ADMIN) =================
-app.get("/api/admin/users/:userId/orders", verifyToken, (req, res) => {
+app.post("/api/books", verifyToken, async (req, res) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
   }
 
-  const { userId } = req.params;
+  try {
+    const { title, author_id, genre_id, price, stock, image, description, import_price } = req.body;
+    const newStock = parseInt(stock) || 0;
+    const impPrice = parseInt(import_price) || 0;
 
-  // Lấy tên người dùng trước
-  const userSql = "SELECT username FROM users WHERE id = ?";
-  db.query(userSql, [userId], (userErr, userResult) => {
-    if (userErr) return res.status(500).json(userErr);
-    if (userResult.length === 0) return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    const book = await prisma.$transaction(async (tx) => {
+      // Tạo sách
+      const newBook = await tx.books.create({
+        data: {
+          title,
+          author_id: parseInt(author_id) || 0,
+          genre_id: parseInt(genre_id) || 0,
+          price: parseInt(price) || 0,
+          stock: newStock,
+          image: image || null,
+          description: description || null,
+        },
+      });
 
-    const username = userResult[0].username;
+      // Ghi lịch sử nhập kho (trong cùng transaction)
+      if (newStock > 0) {
+        await tx.book_imports.create({
+          data: {
+            book_id: newBook.id,
+            quantity: newStock,
+            import_price: impPrice,
+            import_date: new Date(),
+          },
+        });
+      }
 
-    // Sau đó lấy tất cả đơn hàng của người dùng đó
-    const ordersSql = `
-        SELECT * 
-        FROM orders
-        WHERE user_id = ?
-        ORDER BY order_date DESC
-    `;
-
-    db.query(ordersSql, [userId], (ordersErr, orders) => {
-      if (ordersErr) return res.status(500).json(ordersErr);
-      
-      // Trả về cả tên người dùng và danh sách đơn hàng
-      res.json({ username, orders });
+      return newBook;
     });
-  });
+
+    res.status(201).json({ message: "Thêm sách thành công", id: book.id });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= UPDATE BOOK (ADMIN) =================
+app.put("/api/books/:id", verifyToken, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
+  }
+
+  try {
+    const id = parseInt(req.params.id);
+    const { title, author_id, genre_id, price, stock, image, description, import_price } = req.body;
+
+    const existingBook = await prisma.books.findUnique({ where: { id } });
+    const oldStock = existingBook?.stock || 0;
+    const newStock = parseInt(stock) || 0;
+    const importedQty = newStock - oldStock;
+    const impPrice = parseInt(import_price) || 0;
+
+    await prisma.$transaction(async (tx) => {
+      // Cập nhật thông tin sách
+      await tx.books.update({
+        where: { id },
+        data: {
+          title,
+          author_id: parseInt(author_id) || 0,
+          genre_id: parseInt(genre_id) || 0,
+          price: parseInt(price) || 0,
+          stock: newStock,
+          image: image || null,
+          description: description || null,
+        },
+      });
+
+      // Ghi lịch sử nhập kho nếu tăng stock (trong cùng transaction)
+      if (importedQty > 0) {
+        await tx.book_imports.create({
+          data: {
+            book_id: id,
+            quantity: importedQty,
+            import_price: impPrice,
+            import_date: new Date(),
+          },
+        });
+      }
+    });
+
+    res.json({ message: "Cập nhật sách thành công" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= DELETE BOOK (ADMIN) =================
+app.delete("/api/books/:id", verifyToken, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
+  }
+
+  try {
+    await prisma.books.delete({ where: { id: parseInt(req.params.id) } });
+    res.json({ message: "Xóa sách thành công" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= GET GENRES =================
+app.get("/api/genres", async (req, res) => {
+  try {
+    const genres = await prisma.genres.findMany();
+    res.json(genres);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= CREATE GENRE (ADMIN) =================
+app.post("/api/genres", verifyToken, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
+  }
+
+  try {
+    const { name } = req.body;
+    const genre = await prisma.genres.create({ data: { name } });
+    res.status(201).json({ message: "Thêm thể loại thành công", id: genre.id });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= UPDATE GENRE (ADMIN) =================
+app.put("/api/genres/:id", verifyToken, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
+  }
+
+  try {
+    const { name } = req.body;
+    await prisma.genres.update({
+      where: { id: parseInt(req.params.id) },
+      data: { name },
+    });
+    res.json({ message: "Cập nhật thể loại thành công" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= DELETE GENRE (ADMIN) =================
+app.delete("/api/genres/:id", verifyToken, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
+  }
+
+  try {
+    await prisma.genres.delete({ where: { id: parseInt(req.params.id) } });
+    res.json({ message: "Xóa thể loại thành công" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= GET AUTHORS =================
+app.get("/api/authors", async (req, res) => {
+  try {
+    const authors = await prisma.authors.findMany();
+    res.json(authors);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= CREATE AUTHOR (ADMIN) =================
+app.post("/api/authors", verifyToken, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
+  }
+
+  try {
+    const { name, country } = req.body;
+    const author = await prisma.authors.create({ data: { name, country } });
+    res.status(201).json({ message: "Thêm tác giả thành công", id: author.id });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= UPDATE AUTHOR (ADMIN) =================
+app.put("/api/authors/:id", verifyToken, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
+  }
+
+  try {
+    const { name, country } = req.body;
+    await prisma.authors.update({
+      where: { id: parseInt(req.params.id) },
+      data: { name, country },
+    });
+    res.json({ message: "Cập nhật tác giả thành công" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= DELETE AUTHOR (ADMIN) =================
+app.delete("/api/authors/:id", verifyToken, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
+  }
+
+  try {
+    await prisma.authors.delete({ where: { id: parseInt(req.params.id) } });
+    res.json({ message: "Xóa tác giả thành công" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= CART =================
+app.get("/api/cart", verifyToken, async (req, res) => {
+  try {
+    const cartItems = await prisma.cart_items.findMany({
+      where: { user_id: req.user.id },
+      include: {
+        books: {
+          select: { id: true, title: true, price: true, image: true, stock: true },
+        },
+      },
+    });
+
+    const result = cartItems.map((item) => ({
+      id: item.id,
+      quantity: item.quantity,
+      book_id: item.books.id,
+      title: item.books.title,
+      price: item.books.price,
+      image: item.books.image,
+      stock: item.books.stock,
+    }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.post("/api/cart", verifyToken, async (req, res) => {
+  try {
+    const { book_id, quantity = 1 } = req.body;
+    const user_id = req.user.id;
+
+    const book = await prisma.books.findUnique({ where: { id: parseInt(book_id) } });
+    if (!book) return res.status(404).json({ message: "Không tìm thấy sách" });
+
+    const stock = book.stock || 0;
+
+    const existingItem = await prisma.cart_items.findFirst({
+      where: { user_id, book_id: parseInt(book_id) },
+    });
+
+    if (existingItem) {
+      const newQuantity = existingItem.quantity + quantity;
+      if (newQuantity > stock) {
+        return res.status(400).json({ message: "Số lượng trong kho không đủ" });
+      }
+      await prisma.cart_items.update({
+        where: { id: existingItem.id },
+        data: { quantity: newQuantity },
+      });
+      res.json({ message: "Đã cập nhật số lượng trong giỏ hàng" });
+    } else {
+      if (quantity > stock) {
+        return res.status(400).json({ message: "Số lượng trong kho không đủ" });
+      }
+      await prisma.cart_items.create({
+        data: { user_id, book_id: parseInt(book_id), quantity },
+      });
+      res.status(201).json({ message: "Đã thêm vào giỏ hàng" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.delete("/api/cart/:id", verifyToken, async (req, res) => {
+  try {
+    await prisma.cart_items.deleteMany({
+      where: { id: parseInt(req.params.id), user_id: req.user.id },
+    });
+    res.json({ message: "Đã xóa khỏi giỏ hàng" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= GET ORDERS =================
+app.get("/api/orders", verifyToken, async (req, res) => {
+  try {
+    let orders;
+
+    if (req.user.role === "admin") {
+      orders = await prisma.orders.findMany({
+        include: {
+          users: { select: { username: true, email: true } },
+        },
+        orderBy: { order_date: "desc" },
+      });
+
+      orders = orders.map((o) => ({
+        ...o,
+        username: o.users?.username,
+        email: o.users?.email,
+      }));
+    } else {
+      orders = await prisma.orders.findMany({
+        where: { user_id: req.user.id },
+        orderBy: { order_date: "desc" },
+      });
+    }
+
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= CREATE ORDER (CHECKOUT) =================
+app.post("/api/orders", verifyToken, async (req, res) => {
+  try {
+    const { payment_method = "cod" } = req.body;
+    const user_id = req.user.id;
+    const status = payment_method === "qr" ? "Chờ thanh toán" : "Đang xử lí";
+    const order_date = new Date();
+
+    // 1. Lấy giỏ hàng
+    const cartItems = await prisma.cart_items.findMany({
+      where: { user_id },
+      include: { books: { select: { id: true, price: true, stock: true, title: true } } },
+    });
+
+    if (cartItems.length === 0) {
+      return res.status(400).json({ message: "Giỏ hàng của bạn đang trống" });
+    }
+
+    // 2. Kiểm tra tồn kho
+    for (const item of cartItems) {
+      if (item.quantity > (item.books.stock || 0)) {
+        return res.status(400).json({
+          message: `Truyện "${item.books.title}" chỉ còn ${item.books.stock} quyển trong kho. Vui lòng cập nhật lại giỏ hàng!`,
+        });
+      }
+    }
+
+    // 3. Tính tổng tiền
+    const total = cartItems.reduce((sum, item) => sum + item.books.price * item.quantity, 0);
+
+    // 4. Transaction: tạo đơn hàng, order_items, xóa giỏ hàng, trừ kho
+    const result = await prisma.$transaction(async (tx) => {
+      // Tạo order
+      const order = await tx.orders.create({
+        data: { user_id, total, status, order_date, payment_method },
+      });
+
+      // Tạo order_items
+      await tx.order_items.createMany({
+        data: cartItems.map((item) => ({
+          order_id: order.id,
+          book_id: item.books.id,
+          quantity: item.quantity,
+          price: item.books.price,
+        })),
+      });
+
+      // Xóa giỏ hàng
+      await tx.cart_items.deleteMany({ where: { user_id } });
+
+      // Trừ kho
+      for (const item of cartItems) {
+        await tx.books.update({
+          where: { id: item.books.id },
+          data: { stock: { decrement: item.quantity } },
+        });
+      }
+
+      return order;
+    });
+
+    res.status(201).json({ message: "Đặt hàng thành công", order_id: result.id });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// ================= SEPAY WEBHOOK (AUTO CONFIRM PAYMENT) =================
+app.post("/api/webhook/sepay", async (req, res) => {
+  const { transferType, transferAmount, content } = req.body;
+
+  if (transferType === "in") {
+    const match = content.match(/DH(\d+)/i);
+    if (match) {
+      const orderId = parseInt(match[1], 10);
+
+      try {
+        const order = await prisma.orders.findUnique({ where: { id: orderId } });
+
+        if (order && order.status === "Chờ thanh toán" && transferAmount >= order.total) {
+          await prisma.orders.update({
+            where: { id: orderId },
+            data: { status: "Đang xử lí" },
+          });
+          console.log(`✅ [Webhook] Đã tự động xác nhận đơn hàng DH${orderId.toString().padStart(4, "0")}`);
+        }
+      } catch (e) {
+        console.error("Webhook error:", e.message);
+      }
+    }
+  }
+
+  res.status(200).json({ success: true });
+});
+
+
+// ================= GET ORDERS BY USER ID (ADMIN) =================
+app.get("/api/admin/users/:userId/orders", verifyToken, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Chỉ admin mới có quyền này" });
+  }
+
+  try {
+    const userId = parseInt(req.params.userId);
+
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      select: { username: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    const orders = await prisma.orders.findMany({
+      where: { user_id: userId },
+      orderBy: { order_date: "desc" },
+    });
+
+    res.json({ username: user.username, orders });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 
 // ================= GET ORDER DETAILS =================
-app.get("/api/orders/:id", verifyToken, (req, res) => {
-  const { id } = req.params;
-  const userId = req.user.id;
-  const role = req.user.role;
+app.get("/api/orders/:id", verifyToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.user.id;
+    const role = req.user.role;
 
-  // Check quyền: chỉ có Admin và chủ sở hữu của Order mới được xem chi tiết
-  let checkSql = "SELECT * FROM orders WHERE id = ?";
-  db.query(checkSql, [id], (err, result) => {
-    if (err) return res.status(500).json(err);
-    if (result.length === 0) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    const order = await prisma.orders.findUnique({ where: { id } });
 
-    if (role !== "admin" && result[0].user_id !== userId) {
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
+
+    if (role !== "admin" && order.user_id !== userId) {
       return res.status(403).json({ message: "Không có quyền truy cập đơn hàng này" });
     }
 
-    const orderUserId = result[0].user_id;
+    const orderUserId = order.user_id;
 
-    const sql = `
-      SELECT order_items.*, books.title, books.image,
-      (SELECT COUNT(*) FROM reviews WHERE book_id = order_items.book_id AND user_id = ?) as is_reviewed
-      FROM order_items
-      JOIN books ON order_items.book_id = books.id
-      WHERE order_items.order_id = ?
-    `;
-
-    db.query(sql, [orderUserId, id], (err, items) => {
-      if (err) return res.status(500).json(err);
-      res.json({
-        order_info: result[0],
-        items: items
-      });
+    // Lấy order items kèm thông tin sách và kiểm tra đã review chưa
+    const items = await prisma.order_items.findMany({
+      where: { order_id: id },
+      include: {
+        books: { select: { title: true, image: true } },
+      },
     });
-  });
+
+    const itemsWithReview = await Promise.all(
+      items.map(async (item) => {
+        const reviewCount = await prisma.reviews.count({
+          where: { book_id: item.book_id, user_id: orderUserId },
+        });
+        return {
+          ...item,
+          title: item.books?.title,
+          image: item.books?.image,
+          is_reviewed: reviewCount,
+        };
+      })
+    );
+
+    res.json({ order_info: order, items: itemsWithReview });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 
 // ================= UPDATE ORDER STATUS =================
-app.put("/api/orders/:id/status", verifyToken, (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  const userId = req.user.id;
-  const role = req.user.role;
+app.put("/api/orders/:id/status", verifyToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { status } = req.body;
+    const userId = req.user.id;
+    const role = req.user.role;
 
-  if (!status) {
-    return res.status(400).json({ message: "Vui lòng cung cấp trạng thái mới" });
-  }
+    if (!status) {
+      return res.status(400).json({ message: "Vui lòng cung cấp trạng thái mới" });
+    }
 
-  // Lấy thông tin đơn hàng để kiểm tra quyền
-  db.query("SELECT * FROM orders WHERE id = ?", [id], (err, results) => {
-    if (err) return res.status(500).json(err);
-    if (results.length === 0) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    const order = await prisma.orders.findUnique({ where: { id } });
 
-    const order = results[0];
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
 
-    if (order.status === 'Đã hủy') {
+    if (order.status === "Đã hủy") {
       return res.status(400).json({ message: "Không thể cập nhật đơn hàng đã bị hủy" });
     }
 
-    if (order.status === 'Đang giao' && status === 'Đã hủy') {
+    if (order.status === "Đang giao" && status === "Đã hủy") {
       return res.status(400).json({ message: "Không thể hủy đơn hàng đang giao" });
     }
 
-    if (order.status === 'Đã giao') {
+    if (order.status === "Đã giao") {
       return res.status(400).json({ message: "Không thể cập nhật trạng thái đơn hàng đã giao" });
     }
 
-    if (role === "admin" && status === 'Đã hủy') {
+    if (role === "admin" && status === "Đã hủy") {
       return res.status(403).json({ message: "Chỉ khách hàng mới có quyền hủy đơn hàng" });
     }
 
-    // Nếu không phải admin, kiểm tra các điều kiện để user tự hủy đơn
     if (role !== "admin") {
       if (order.user_id !== userId) {
         return res.status(403).json({ message: "Bạn không có quyền cập nhật đơn hàng này" });
       }
-      if (status !== 'Đã hủy') {
+      if (status !== "Đã hủy") {
         return res.status(403).json({ message: "Người dùng chỉ có quyền hủy đơn hàng" });
       }
-      const canCancelCod = order.payment_method === 'cod' && order.status === 'Đang xử lí';
-      const canCancelQr = order.payment_method === 'qr' && order.status === 'Chờ thanh toán';
+      const canCancelCod = order.payment_method === "cod" && order.status === "Đang xử lí";
+      const canCancelQr = order.payment_method === "qr" && order.status === "Chờ thanh toán";
       if (!canCancelCod && !canCancelQr) {
         return res.status(400).json({ message: "Không thể hủy đơn hàng ở trạng thái hiện tại" });
       }
     }
 
-    const sql = "UPDATE orders SET status = ? WHERE id = ?";
-    db.query(sql, [status, id], (updateErr, result) => {
-      if (updateErr) return res.status(500).json(updateErr);
+    await prisma.orders.update({ where: { id }, data: { status } });
 
-      if (status === 'Đã hủy') {
-        db.query("SELECT book_id, quantity FROM order_items WHERE order_id = ?", [id], (err, items) => {
-          if (!err && items.length > 0) {
-            items.forEach(item => {
-              db.query("UPDATE books SET stock = stock + ? WHERE id = ?", [item.quantity, item.book_id]);
-            });
-          }
-          res.json({ message: "Cập nhật trạng thái đơn hàng thành công" });
-        });
-      } else {
-        res.json({ message: "Cập nhật trạng thái đơn hàng thành công" });
-      }
-    });
-  });
+    // Hoàn kho nếu hủy đơn
+    if (status === "Đã hủy") {
+      const orderItems = await prisma.order_items.findMany({ where: { order_id: id } });
+      await Promise.all(
+        orderItems.map((item) =>
+          prisma.books.update({
+            where: { id: item.book_id },
+            data: { stock: { increment: item.quantity } },
+          })
+        )
+      );
+    }
+
+    res.json({ message: "Cập nhật trạng thái đơn hàng thành công" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
+
 // ================= CANCEL QR CHECKOUT & RESTORE CART =================
-app.post("/api/orders/:id/cancel-checkout", verifyToken, (req, res) => {
-  const { id } = req.params;
-  const user_id = req.user.id;
+app.post("/api/orders/:id/cancel-checkout", verifyToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const user_id = req.user.id;
 
-  db.query("SELECT * FROM orders WHERE id = ? AND user_id = ? AND status = 'Chờ thanh toán'", [id, user_id], (err, results) => {
-    if (err) return res.status(500).json(err);
-    if (results.length === 0) return res.status(404).json({ message: "Không tìm thấy đơn hàng hợp lệ để hủy" });
-
-    db.query("SELECT book_id, quantity FROM order_items WHERE order_id = ?", [id], (err, items) => {
-      if (err) return res.status(500).json(err);
-      
-      if (items.length > 0) {
-        const cartValues = items.map(item => [user_id, item.book_id, item.quantity]);
-        db.query("INSERT INTO cart_items (user_id, book_id, quantity) VALUES ?", [cartValues], (err) => {
-          if (err) return res.status(500).json(err);
-          
-          db.query("DELETE FROM order_items WHERE order_id = ?", [id], (err) => {
-            db.query("DELETE FROM orders WHERE id = ?", [id], (err) => {
-              // Khôi phục số lượng kho khi khách hàng bỏ qua thanh toán QR
-              items.forEach(item => {
-                db.query("UPDATE books SET stock = stock + ? WHERE id = ?", [item.quantity, item.book_id]);
-              });
-              res.json({ message: "Đã hủy giao dịch và khôi phục giỏ hàng" });
-            });
-          });
-        });
-      } else {
-        db.query("DELETE FROM orders WHERE id = ?", [id], () => {
-          res.json({ message: "Đã hủy giao dịch" });
-        });
-      }
+    const order = await prisma.orders.findFirst({
+      where: { id, user_id, status: "Chờ thanh toán" },
     });
-  });
+
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng hợp lệ để hủy" });
+    }
+
+    const items = await prisma.order_items.findMany({ where: { order_id: id } });
+
+    await prisma.$transaction(async (tx) => {
+      if (items.length > 0) {
+        // Khôi phục giỏ hàng
+        await tx.cart_items.createMany({
+          data: items.map((item) => ({
+            user_id,
+            book_id: item.book_id,
+            quantity: item.quantity,
+          })),
+        });
+
+        // Khôi phục kho
+        for (const item of items) {
+          await tx.books.update({
+            where: { id: item.book_id },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
+      }
+
+      // Xóa order_items và order
+      await tx.order_items.deleteMany({ where: { order_id: id } });
+      await tx.orders.delete({ where: { id } });
+    });
+
+    res.json({ message: "Đã hủy giao dịch và khôi phục giỏ hàng" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 
 // ================= START SERVER =================
-const PORT =
-  process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(
-    `Server running on port ${PORT}`
-  );
+  console.log(`Server running on port ${PORT}`);
 });

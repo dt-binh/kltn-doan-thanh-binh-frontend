@@ -176,3 +176,14 @@ CREATE TABLE order_items (
     REFERENCES books(id)
     ON DELETE CASCADE
 );
+
+-- =========================================================
+-- BOOK IMPORTS
+-- =========================================================
+CREATE TABLE book_imports (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    book_id INT,
+    quantity INT,
+    import_price INT,
+    import_date DATE
+);
