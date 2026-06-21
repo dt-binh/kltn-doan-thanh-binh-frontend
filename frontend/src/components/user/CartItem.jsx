@@ -25,7 +25,7 @@ const CartItem = ({ item, updateQuantity, removeItem }) => {
   return (
     <div className="cart-item">
       <div className="cart-item-image">
-        <img src={item.book.image} alt={item.book.title} />
+        <img src={item.book.image || null} alt={item.book.title} />
       </div>
       <div className="cart-item-info">
         <h3>{item.book.title}</h3>

@@ -7,7 +7,7 @@ const BookCard = ({ book }) => {
   return (
     <Link to={`/book/${book.id}`} className="book-card">
       <div className="book-image">
-        <img src={book.image} alt={book.title} />
+        <img src={book.image || null} alt={book.title} />
       </div>
       <div className="book-info">
         <h3 className="book-title">{book.title}</h3>

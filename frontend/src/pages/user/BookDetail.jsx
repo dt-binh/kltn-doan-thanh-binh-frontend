@@ -175,7 +175,7 @@ const BookDetail = () => {
           <div className="detail-content">
             <div className="detail-image">
               <img
-                src={book.image}
+                src={book.image || null}
                 alt={book.title}
                 onError={(e) => {
                   e.target.src =
