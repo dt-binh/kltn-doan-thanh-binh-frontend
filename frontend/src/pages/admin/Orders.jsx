@@ -116,16 +116,18 @@ const Orders = () => {
                     className={`status status-select ${
                       order.status === 'Đã giao' ? 'status-success' : 
                       order.status === 'Đã hủy' ? 'status-danger' : 
+                      order.status === 'Không nhận hàng' ? 'status-danger' : 
                       order.status === 'Đang giao' ? 'status-delivering' : 
                       order.status === 'Đang xử lí' ? 'status-processing' : 
                       'status-pending'
                     }`}
-                    disabled={order.status === 'Đã hủy' || order.status === 'Đã giao'}
+                    disabled={['Đã hủy', 'Đã giao', 'Không nhận hàng'].includes(order.status)}
                   >
                     {order.status === 'Chờ thanh toán' && <option value="Chờ thanh toán">Chờ thanh toán</option>}
                     <option value="Đang xử lí">Đang xử lí</option>
                     <option value="Đang giao">Đang giao</option>
                     <option value="Đã giao">Đã giao</option>
+                    <option value="Không nhận hàng">Không nhận hàng</option>
                     {order.status === 'Đã hủy' && <option value="Đã hủy">Đã hủy</option>}
                   </select>
                 </td>

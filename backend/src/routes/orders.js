@@ -196,11 +196,15 @@ router.put("/api/orders/:id/status", verifyToken, async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
     }
 
-    if (order.status === "Đã hủy") {
+    if (order.status === "Đã hủy" || order.status === "Không nhận hàng") {
       return res.status(400).json({ message: "Không thể cập nhật đơn hàng đã bị hủy" });
     }
 
-    if (order.status === "Đang giao" && status === "Đã hủy") {
+    // Admin có thể cập nhật từ "Đang giao" -> "Không nhận hàng"
+    // nhưng user không thể tự hủy khi đang giao
+    const isCancellingWhileDelivering = order.status === "Đang giao" && status === "Đã hủy";
+
+    if (isCancellingWhileDelivering) {
       return res.status(400).json({ message: "Không thể hủy đơn hàng đang giao" });
     }
 
@@ -228,8 +232,8 @@ router.put("/api/orders/:id/status", verifyToken, async (req, res) => {
 
     await prisma.orders.update({ where: { id }, data: { status } });
 
-    // Hoàn kho nếu hủy đơn
-    if (status === "Đã hủy") {
+    // Hoàn kho nếu hủy đơn hoặc không nhận hàng
+    if (status === "Đã hủy" || status === "Không nhận hàng") {
       const orderItems = await prisma.order_items.findMany({ where: { order_id: id } });
       await Promise.all(
         orderItems.map((item) =>
