@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./Users.css";
+import { ToastContainer, useToast } from "../../components/common/Toast";
 
 const Users = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const token = localStorage.getItem("token");
+  const { toasts, showToast, removeToast } = useToast();
 
   useEffect(() => {
     fetchUsers();
@@ -69,15 +71,21 @@ const Users = () => {
         }
       );
 
+      showToast(
+        newStatus === "active" ? "Đã mở khóa tài khoản!" : "Đã khóa tài khoản!",
+        "success"
+      );
       fetchUsers();
     } catch (error) {
       console.error("Lỗi cập nhật user", error);
-      alert("Lỗi cập nhật!");
+      showToast(error.response?.data?.message || "Lỗi cập nhật!", "error");
     }
   };
 
   return (
     <div className="users-page admin-page">
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+
       <h2>Quản lý người dùng ({users.length})</h2>
 
       <div className="table-container">

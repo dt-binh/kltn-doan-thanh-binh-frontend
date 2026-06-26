@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./Books.css";
+import { ToastContainer, useToast } from "../../components/common/Toast";
 
 // Component hiển thị ảnh chống nhấp nháy
 const BookImage = ({ src, alt }) => {
@@ -28,6 +29,7 @@ const Books = () => {
   const [books, setBooks] = useState([]);
   const [genres, setGenres] = useState([]);
   const [authors, setAuthors] = useState([]);
+  const { toasts, showToast, removeToast } = useToast();
 
   // MODAL STATES
   const [modalType, setModalType] = useState(null); // 'add' | 'edit' | 'import'
@@ -128,30 +130,32 @@ const Books = () => {
   };
 
   const handleSaveBook = async () => {
-    if (!formData.title) return alert("Nhập tiêu đề!");
-    if (!formData.author_id) return alert("Chọn tác giả!");
-    if (!formData.genre_id) return alert("Chọn thể loại!");
+    if (!formData.title) return showToast("Nhập tiêu đề!", "warning");
+    if (!formData.author_id) return showToast("Chọn tác giả!", "warning");
+    if (!formData.genre_id) return showToast("Chọn thể loại!", "warning");
 
     try {
       if (modalType === "add") {
         await axios.post("http://localhost:5000/api/books", formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        showToast("Thêm truyện thành công!", "success");
       } else if (modalType === "edit") {
         await axios.put(`http://localhost:5000/api/books/${formData.id}`, formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        showToast("Cập nhật truyện thành công!", "success");
       }
       closeModal();
       fetchData();
     } catch (error) {
       console.error("Lỗi lưu sách", error);
-      alert("Lưu thất bại");
+      showToast(error.response?.data?.message || "Lưu thất bại!", "error");
     }
   };
 
   const handleSaveImport = async () => {
-    if (importAmount <= 0) return alert("Số lượng nhập phải lớn hơn 0");
+    if (importAmount <= 0) return showToast("Số lượng nhập phải lớn hơn 0!", "warning");
 
     const updatedStock = Number(formData.stock) + Number(importAmount);
     const payload = { ...formData, stock: updatedStock };
@@ -160,11 +164,12 @@ const Books = () => {
       await axios.put(`http://localhost:5000/api/books/${formData.id}`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      showToast(`Nhập hàng thành công! Tồn kho: ${updatedStock}`, "success");
       closeModal();
       fetchData();
     } catch (error) {
       console.error("Lỗi nhập hàng", error);
-      alert("Nhập hàng thất bại");
+      showToast(error.response?.data?.message || "Nhập hàng thất bại!", "error");
     }
   };
 
@@ -174,9 +179,11 @@ const Books = () => {
         await axios.delete(`http://localhost:5000/api/books/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        showToast("Xóa truyện thành công!", "success");
         fetchData();
       } catch (error) {
         console.error("Lỗi xóa sách", error);
+        showToast(error.response?.data?.message || "Xóa thất bại!", "error");
       }
     }
   };
@@ -206,14 +213,16 @@ const Books = () => {
       const imageUrl = res.data.imageUrl;
 
       setFormData((prev) => ({ ...prev, image: imageUrl }));
+      showToast("Tải ảnh lên thành công!", "success");
     } catch (error) {
       console.error("Lỗi tải ảnh lên:", error);
-      alert("Tải ảnh thất bại!");
+      showToast("Tải ảnh thất bại!", "error");
     }
   };
 
   return (
     <div className="books-page">
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
       {/* HEADER */}
       <div className="books-header">
         <h2>Quản lý truyện ({books.length})</h2>

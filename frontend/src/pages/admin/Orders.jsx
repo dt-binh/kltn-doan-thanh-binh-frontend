@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Orders.css';
+import { ToastContainer, useToast } from '../../components/common/Toast';
 
 const Orders = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const token = localStorage.getItem("token");
+  const { toasts, showToast, removeToast } = useToast();
 
   // State quản lý chi tiết đơn hàng
   const [expandedOrder, setExpandedOrder] = useState(null);
@@ -48,10 +50,11 @@ const Orders = () => {
       await axios.put(`http://localhost:5000/api/orders/${id}/status`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      showToast(`Cập nhật trạng thái thành "${status}" thành công!`, "success");
       fetchOrders();
     } catch (error) {
       console.error("Lỗi cập nhật trạng thái", error);
-      alert(error.response?.data?.message || "Lỗi cập nhật trạng thái");
+      showToast(error.response?.data?.message || "Lỗi cập nhật trạng thái!", "error");
     }
   };
 
@@ -70,7 +73,7 @@ const Orders = () => {
       setOrderDetails(res.data.items);
     } catch (err) {
       console.error("Lỗi lấy chi tiết đơn hàng:", err);
-      alert("Không thể tải chi tiết đơn hàng.");
+      showToast("Không thể tải chi tiết đơn hàng.", "error");
       setExpandedOrder(null);
     } finally {
       setDetailsLoading(false);
@@ -79,6 +82,8 @@ const Orders = () => {
 
   return (
     <div className="orders-page admin-page">
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+
       <h2>Quản lý đơn hàng ({orders.length})</h2>
       <div className="table-container">
         <table className="admin-table">

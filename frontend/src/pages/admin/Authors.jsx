@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./Authors.css";
+import { ToastContainer, useToast } from "../../components/common/Toast";
 
 const Authors = () => {
   const navigate = useNavigate();
   const [authors, setAuthors] = useState([]);
+  const { toasts, showToast, removeToast } = useToast();
 
   // MODAL STATES
   const [modalType, setModalType] = useState(null); // 'add' | 'edit'
@@ -54,24 +56,26 @@ const Authors = () => {
   };
 
   const handleSaveAuthor = async () => {
-    if (!formData.name) return alert("Nhập tên tác giả!");
-    if (!formData.country) return alert("Nhập quốc gia!");
+    if (!formData.name) return showToast("Nhập tên tác giả!", "warning");
+    if (!formData.country) return showToast("Nhập quốc gia!", "warning");
 
     try {
       if (modalType === "add") {
         await axios.post("http://localhost:5000/api/authors", formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        showToast("Thêm tác giả thành công!", "success");
       } else if (modalType === "edit") {
         await axios.put(`http://localhost:5000/api/authors/${formData.id}`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        showToast("Cập nhật tác giả thành công!", "success");
       }
       closeModal();
       fetchAuthors();
     } catch (error) {
       console.error("Lỗi lưu tác giả", error);
-      alert("Lưu thất bại");
+      showToast(error.response?.data?.message || "Lưu thất bại!", "error");
     }
   };
 
@@ -82,16 +86,19 @@ const Authors = () => {
         await axios.delete(`http://localhost:5000/api/authors/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        showToast("Xóa tác giả thành công!", "success");
         fetchAuthors();
       } catch (error) {
         console.error("Lỗi xóa", error);
-        alert("Xóa thất bại");
+        showToast(error.response?.data?.message || "Xóa thất bại!", "error");
       }
     }
   };
 
   return (
     <div className="authors-page">
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+
       {/* HEADER */}
       <div className="authors-header">
         <h2>Quản lý tác giả ({authors.length})</h2>
