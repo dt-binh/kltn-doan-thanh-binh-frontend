@@ -88,9 +88,9 @@ const BookDetail = () => {
     setUploadingImage(true);
     try {
       const res = await axios.post("http://localhost:5000/api/upload", formData, {
-        headers: { 
+        headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         }
       });
       setNewReview({ ...newReview, image: res.data.imageUrl });
@@ -109,7 +109,7 @@ const BookDetail = () => {
       alert("Vui lòng đăng nhập để đánh giá");
       return;
     }
-    
+
     setSubmittingReview(true);
     try {
       await axios.post(`http://localhost:5000/api/books/${id}/reviews`, newReview, {
@@ -117,7 +117,7 @@ const BookDetail = () => {
       });
       alert("Đánh giá thành công!");
       setNewReview({ rating: 5, comment: "", image: "" });
-      
+
       // Tải lại sách và đánh giá để cập nhật UI
       const [bookRes, reviewsRes] = await Promise.all([
         axios.get(`http://localhost:5000/api/books/${id}`),
@@ -146,10 +146,11 @@ const BookDetail = () => {
   const ratingValue = Math.max(0, Math.min(5, book.rating ? Math.floor(Number(book.rating)) : 0));
 
   // Tính toán thống kê đánh giá
+  //tính %
   const totalReviews = reviews.length;
   const ratingCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
   let averageRating = 0;
-
+  //tính trung bình
   if (totalReviews > 0) {
     let totalScore = 0;
     reviews.forEach(r => {
@@ -192,14 +193,14 @@ const BookDetail = () => {
                 <span className="genre">{book.genre_name}</span>
                 <div className="rating">
                   {"★".repeat(ratingValue)}
-            {"☆".repeat(Math.max(0, 5 - ratingValue))}
+                  {"☆".repeat(Math.max(0, 5 - ratingValue))}
                   <span>({book.rating ? parseFloat(book.rating).toFixed(1) : "0"})</span>
                 </div>
               </div>
 
               <div className="price-section">
-          <div className="price">{(book.price || 0).toLocaleString()} ₫</div>
-          <div className="kho">Kho: {book.stock || 0}</div>
+                <div className="price">{(book.price || 0).toLocaleString()} ₫</div>
+                <div className="kho">Kho: {book.stock || 0}</div>
 
                 <div className="quantity">
                   <label>Số lượng:</label>
@@ -271,7 +272,7 @@ const BookDetail = () => {
                 </div>
                 <div className="average-score-count">{totalReviews} đánh giá</div>
               </div>
-              
+
               <div className="rating-bars-container">
                 {[5, 4, 3, 2, 1].map(star => {
                   const count = ratingCounts[star];
@@ -295,9 +296,9 @@ const BookDetail = () => {
               <form onSubmit={handleReviewSubmit}>
                 <div className="review-form-group">
                   <label className="review-form-label">Đánh giá (Sao):</label>
-                  <select 
-                    value={newReview.rating} 
-                    onChange={(e) => setNewReview({...newReview, rating: parseInt(e.target.value)})}
+                  <select
+                    value={newReview.rating}
+                    onChange={(e) => setNewReview({ ...newReview, rating: parseInt(e.target.value) })}
                     className="review-form-select"
                   >
                     <option value={5}>5 Sao - Tuyệt vời</option>
@@ -310,9 +311,9 @@ const BookDetail = () => {
 
                 <div className="review-form-group">
                   <label className="review-form-label">Bình luận:</label>
-                  <textarea 
+                  <textarea
                     value={newReview.comment}
-                    onChange={(e) => setNewReview({...newReview, comment: e.target.value})}
+                    onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
                     rows="3"
                     placeholder="Hãy chia sẻ cảm nhận của bạn về cuốn sách này..."
                     className="review-form-textarea"
@@ -333,10 +334,10 @@ const BookDetail = () => {
                   <p className="review-empty-text">Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá truyện này!</p>
                 </div>
               ) : (
-        reviews.map(review => {
-          // Xử lý an toàn cho review rating (bảo vệ trường hợp rating nằm ngoài khoảng mong muốn)
-          const rValue = Math.max(0, Math.min(5, Number(review.rating) || 5));
-          return (
+                reviews.map(review => {
+                  // Xử lý an toàn cho review rating (bảo vệ trường hợp rating nằm ngoài khoảng mong muốn)
+                  const rValue = Math.max(0, Math.min(5, Number(review.rating) || 5));
+                  return (
                     <div key={review.id} className="review-item-container">
                       <div className="review-item-header">
                         <div className="review-user-info">
@@ -350,13 +351,13 @@ const BookDetail = () => {
                               {"☆".repeat(5 - rValue)}
                             </span>
                           </div>
-                </div>
+                        </div>
                         <span className="review-item-date">
                           {new Date(review.created_at).toLocaleDateString("vi-VN")}
                         </span>
-              </div>
+                      </div>
                       <p className="review-item-comment">{review.comment}</p>
-                      
+
                       {review.image && (
                         <div className="review-item-image-wrapper">
                           <a href={review.image} target="_blank" rel="noopener noreferrer">
@@ -364,9 +365,9 @@ const BookDetail = () => {
                           </a>
                         </div>
                       )}
-            </div>
-          );
-        })
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>

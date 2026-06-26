@@ -53,7 +53,7 @@ const Cart = () => {
     if (newQty < 1) return;
     const item = cartItems.find((i) => i.id === itemId);
     if (!item) return;
-    
+
     // Cập nhật state cục bộ ngay lập tức để giao diện (tổng tiền, cảnh báo, nút thanh toán) phản hồi ngay
     setCartItems((prev) =>
       prev.map((i) => (i.id === itemId ? { ...i, quantity: newQty } : i))
@@ -95,7 +95,7 @@ const Cart = () => {
       console.error("Lỗi xóa sản phẩm:", error);
     }
   };
-  //tính tổng tiền của giỏ hàng, sau đó hiển thị trong phần tóm tắt thanh toán
+  //thuật toán Reduce tính tổng tiền
   const total = cartItems.reduce(
     (sum, item) => sum + item.book.price * item.quantity,
     0

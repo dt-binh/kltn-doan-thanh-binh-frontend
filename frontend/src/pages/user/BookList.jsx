@@ -62,6 +62,7 @@ const BookList = () => {
   const filteredBooks = useMemo(() => {
     let result = [...books];
 
+    //thuật toán Linear Search
     if (search) {
       result = result.filter(
         (book) =>
@@ -76,6 +77,7 @@ const BookList = () => {
       );
     }
 
+    // thuật toán Pipeline Filter
     if (selectedGenre) {
       result = result.filter(
         (book) => book.genre_name === selectedGenre
@@ -99,6 +101,7 @@ const BookList = () => {
       });
     }
 
+    //thuật toán Sort-TimSort
     switch (sortBy) {
 
       case "newest":
@@ -132,7 +135,7 @@ const BookList = () => {
     sortBy,
   ]);
 
-  // Tính toán sách cho trang hiện tại
+  //thuật toán phân trang
   const itemsPerPage = 12; // Hiển thị 12 truyện mỗi trang
   const totalPages = Math.ceil(filteredBooks.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -160,7 +163,7 @@ const BookList = () => {
 
               {/* LEFT SIDEBAR - FILTERS */}
               <aside className="filters-sidebar">
-                
+
                 <div className="sidebar-header">
                   <h3>Danh sách truyện</h3>
                   <span className="results-count">({filteredBooks.length} kết quả)</span>
@@ -181,8 +184,8 @@ const BookList = () => {
                 {/* GENRE */}
                 <div className="filter-group">
                   <label>Thể loại</label>
-                  <select 
-                    value={selectedGenre} 
+                  <select
+                    value={selectedGenre}
                     onChange={(e) => setSelectedGenre(e.target.value)}
                   >
                     <option value="">Tất cả thể loại</option>
@@ -195,8 +198,8 @@ const BookList = () => {
                 {/* AUTHOR */}
                 <div className="filter-group">
                   <label>Tác giả</label>
-                  <select 
-                    value={selectedAuthor} 
+                  <select
+                    value={selectedAuthor}
                     onChange={(e) => setSelectedAuthor(e.target.value)}
                   >
                     <option value="">Tất cả tác giả</option>
@@ -209,8 +212,8 @@ const BookList = () => {
                 {/* PRICE RANGE */}
                 <div className="filter-group">
                   <label>Mức giá</label>
-                  <select 
-                    value={selectedPriceRange} 
+                  <select
+                    value={selectedPriceRange}
                     onChange={(e) => setSelectedPriceRange(e.target.value)}
                   >
                     <option value="">Tất cả mức giá</option>
@@ -224,8 +227,8 @@ const BookList = () => {
                 {/* SORT */}
                 <div className="filter-group">
                   <label>Sắp xếp</label>
-                  <select 
-                    value={sortBy} 
+                  <select
+                    value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                   >
                     <option value="newest">Mới nhất</option>
@@ -240,12 +243,12 @@ const BookList = () => {
 
                 <div className="books-grid">
 
-                {currentBooks.map((book) => (
-                  <BookCard
-                    key={book.id}
-                    book={book}
-                  />
-                ))}
+                  {currentBooks.map((book) => (
+                    <BookCard
+                      key={book.id}
+                      book={book}
+                    />
+                  ))}
 
                 </div>
 
@@ -258,21 +261,20 @@ const BookList = () => {
                 {/* Phân trang */}
                 {totalPages > 1 && (
                   <div className="pagination">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    className="pagination-btn"
-                  >
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      className="pagination-btn"
+                    >
                       &laquo; Trước
                     </button>
-                    
+
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`pagination-btn ${
-                          currentPage === page ? "pagination-active" : ""
-                        }`}
+                        className={`pagination-btn ${currentPage === page ? "pagination-active" : ""
+                          }`}
                       >
                         {page}
                       </button>

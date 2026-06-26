@@ -14,7 +14,6 @@ router.get("/api/books", async (req, res) => {
       },
     });
 
-    // Flatten author_name và genre_name
     const result = books.map((b) => ({
       ...b,
       author_name: b.authors?.name,

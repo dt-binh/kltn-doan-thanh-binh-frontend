@@ -65,7 +65,7 @@ router.post("/api/orders", verifyToken, async (req, res) => {
     // 3. Tính tổng tiền
     const total = cartItems.reduce((sum, item) => sum + item.books.price * item.quantity, 0);
 
-    // 4. Transaction: tạo đơn hàng, order_items, xóa giỏ hàng, trừ kho
+    // 4. Transaction: tạo đơn hàng
     const result = await prisma.$transaction(async (tx) => {
       // Tạo order
       const order = await tx.orders.create({
